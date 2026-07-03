@@ -11,30 +11,35 @@
     <span>Welcome, <%= user.full_name %> (Accountant)</span>
     <a href="/logout">Logout</a>
   </nav>
-  <div class="container">
-    <h1>Student Tuition Status</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Full Name</th>
-          <th>Email</th>
-          <th>Tuition Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% students.forEach(student => { %>
-          <tr>
-            <td><%= student.username %></td>
-            <td><%= student.full_name %></td>
-            <td><%= student.email %></td>
-            <td class="<%= student.tuition_paid ? 'paid' : 'unpaid' %>">
-              <%= student.tuition_paid ? 'Paid' : 'Not Paid' %>
-            </td>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
+  <div class="container dashboard-grid">
+    <section class="card">
+      <h1>Finance Dashboard</h1>
+      <p>Manage invoices, reconcile accounts, and review payment trends.</p>
+      <table>
+        <thead><tr><th>Student</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead>
+        <tbody>
+          <% students.forEach(student => { %>
+            <tr>
+              <td><%= student.full_name %></td>
+              <td><%= student.email %></td>
+              <td>$<%= student.tuition_balance %></td>
+              <td>
+                <form action="/accountant/toggle-payment" method="POST">
+                  <input type="hidden" name="student_id" value="<%= student.id %>">
+                  <button type="submit">Toggle</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Payment Summary</h2>
+      <ul>
+        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — <%= payment.purpose %>: $<%= payment.amount %> (<%= payment.status %>)</li><% }); %>
+      </ul>
+    </section>
   </div>
 </body>
 </html>

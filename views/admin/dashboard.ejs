@@ -11,22 +11,115 @@
     <span>Welcome, <%= user.full_name %> (Admin)</span>
     <a href="/logout">Logout</a>
   </nav>
-  <div class="container">
-    <h1>Student Management</h1>
-    <% students.forEach(student => { %>
-      <div class="student-card">
-        <form action="/admin/update-student" method="POST">
-          <input type="hidden" name="student_id" value="<%= student.id %>">
-          <p><strong>Username:</strong> <%= student.username %></p>
-          <label>Full Name:</label>
-          <input type="text" name="full_name" value="<%= student.full_name %>">
-          <label>Email:</label>
-          <input type="email" name="email" value="<%= student.email %>">
-          <p><strong>Tuition:</strong> <%= student.tuition_paid ? 'Paid' : 'Not Paid' %></p>
-          <button type="submit">Update Student</button>
-        </form>
-      </div>
-    <% }); %>
+  <div class="container dashboard-grid">
+    <section class="card">
+      <h1>Administration Center</h1>
+      <h2>Pending Applications</h2>
+      <% applicants.forEach(applicant => { %>
+        <div class="student-card">
+          <p><strong><%= applicant.full_name %></strong> — <%= applicant.program_choice %></p>
+          <p>Status: <%= applicant.status %></p>
+          <form action="/admin/approve-application" method="POST" style="display:inline-block">
+            <input type="hidden" name="applicant_id" value="<%= applicant.id %>">
+            <button type="submit">Approve</button>
+          </form>
+          <form action="/admin/reject-application" method="POST" style="display:inline-block">
+            <input type="hidden" name="applicant_id" value="<%= applicant.id %>">
+            <button type="submit">Reject</button>
+          </form>
+        </div>
+      <% }); %>
+    </section>
+    <section class="card">
+      <h2>Student Records</h2>
+      <% students.forEach(student => { %>
+        <div class="student-card">
+          <form action="/admin/update-student" method="POST">
+            <input type="hidden" name="student_id" value="<%= student.id %>">
+            <p><strong>Username:</strong> <%= student.username %></p>
+            <label>Full Name</label>
+            <input type="text" name="full_name" value="<%= student.full_name %>">
+            <label>Email</label>
+            <input type="email" name="email" value="<%= student.email %>">
+            <label>Program</label>
+            <select name="program">
+              <optgroup label="School of Engineering">
+                <option value="Bachelor of Computer Engineering" <%= student.program === 'Bachelor of Computer Engineering' ? 'selected' : '' %>>Bachelor of Computer Engineering</option>
+                <option value="Bachelor of Electrical Engineering" <%= student.program === 'Bachelor of Electrical Engineering' ? 'selected' : '' %>>Bachelor of Electrical Engineering</option>
+                <option value="Bachelor of Mechanical Engineering" <%= student.program === 'Bachelor of Mechanical Engineering' ? 'selected' : '' %>>Bachelor of Mechanical Engineering</option>
+              </optgroup>
+              <optgroup label="School of Law">
+                <option value="Bachelor of Commercial Law" <%= student.program === 'Bachelor of Commercial Law' ? 'selected' : '' %>>Bachelor of Commercial Law</option>
+                <option value="Bachelor of International Law" <%= student.program === 'Bachelor of International Law' ? 'selected' : '' %>>Bachelor of International Law</option>
+                <option value="Bachelor of Human Rights Law" <%= student.program === 'Bachelor of Human Rights Law' ? 'selected' : '' %>>Bachelor of Human Rights Law</option>
+              </optgroup>
+              <optgroup label="School of Humanities">
+                <option value="Bachelor of English Literature" <%= student.program === 'Bachelor of English Literature' ? 'selected' : '' %>>Bachelor of English Literature</option>
+                <option value="Bachelor of History and International Studies" <%= student.program === 'Bachelor of History and International Studies' ? 'selected' : '' %>>Bachelor of History and International Studies</option>
+                <option value="Bachelor of Communication Studies" <%= student.program === 'Bachelor of Communication Studies' ? 'selected' : '' %>>Bachelor of Communication Studies</option>
+              </optgroup>
+              <optgroup label="School of Business">
+                <option value="Bachelor of Accounting" <%= student.program === 'Bachelor of Accounting' ? 'selected' : '' %>>Bachelor of Accounting</option>
+                <option value="Bachelor of Marketing" <%= student.program === 'Bachelor of Marketing' ? 'selected' : '' %>>Bachelor of Marketing</option>
+                <option value="Bachelor of Business Administration" <%= student.program === 'Bachelor of Business Administration' ? 'selected' : '' %>>Bachelor of Business Administration</option>
+              </optgroup>
+              <optgroup label="School of Natural Sciences">
+                <option value="Bachelor of Biology" <%= student.program === 'Bachelor of Biology' ? 'selected' : '' %>>Bachelor of Biology</option>
+                <option value="Bachelor of Chemistry" <%= student.program === 'Bachelor of Chemistry' ? 'selected' : '' %>>Bachelor of Chemistry</option>
+                <option value="Bachelor of Physics" <%= student.program === 'Bachelor of Physics' ? 'selected' : '' %>>Bachelor of Physics</option>
+              </optgroup>
+              <optgroup label="School of Public Health">
+                <option value="Bachelor of Public Health" <%= student.program === 'Bachelor of Public Health' ? 'selected' : '' %>>Bachelor of Public Health</option>
+                <option value="Bachelor of Epidemiology" <%= student.program === 'Bachelor of Epidemiology' ? 'selected' : '' %>>Bachelor of Epidemiology</option>
+              </optgroup>
+              <optgroup label="School of Medicine and Surgery">
+                <option value="Bachelor of Medicine and Surgery" <%= student.program === 'Bachelor of Medicine and Surgery' ? 'selected' : '' %>>Bachelor of Medicine and Surgery</option>
+                <option value="Bachelor of Nursing" <%= student.program === 'Bachelor of Nursing' ? 'selected' : '' %>>Bachelor of Nursing</option>
+              </optgroup>
+            </select>
+            <label>Status</label>
+            <input type="text" name="status" value="<%= student.status %>">
+            <button type="submit">Update</button>
+          </form>
+        </div>
+      <% }); %>
+    </section>
+    <section class="card">
+      <h2>Course Registrations</h2>
+      <% pendingEnrollments.forEach(item => { %>
+        <div class="student-card">
+          <p><strong><%= item.student_name %></strong> requested <%= item.code %></p>
+          <form action="/admin/approve-enrollment" method="POST" style="display:inline-block">
+            <input type="hidden" name="enrollment_id" value="<%= item.id %>">
+            <button type="submit">Approve</button>
+          </form>
+          <form action="/admin/reject-enrollment" method="POST" style="display:inline-block">
+            <input type="hidden" name="enrollment_id" value="<%= item.id %>">
+            <button type="submit">Reject</button>
+          </form>
+        </div>
+      <% }); %>
+    </section>
+    <section class="card">
+      <h2>Create Course</h2>
+      <form action="/admin/create-course" method="POST">
+        <input type="text" name="code" placeholder="Course Code">
+        <input type="text" name="name" placeholder="Course Name">
+        <input type="number" name="credits" placeholder="Credits" value="3">
+        <input type="text" name="semester" placeholder="Semester" value="Fall">
+        <input type="text" name="prerequisite" placeholder="Prerequisite">
+        <button type="submit">Add Course</button>
+      </form>
+      <h2>Announcements</h2>
+      <form action="/admin/publish-announcement" method="POST">
+        <input type="text" name="title" placeholder="Title">
+        <textarea name="body" placeholder="Message"></textarea>
+        <button type="submit">Publish</button>
+      </form>
+      <ul>
+        <% announcements.forEach(item => { %><li><strong><%= item.title %>:</strong> <%= item.body %></li><% }); %>
+      </ul>
+    </section>
   </div>
 </body>
 </html>

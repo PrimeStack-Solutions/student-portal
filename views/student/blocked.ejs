@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Restricted</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <a href="/logout">Logout</a>
+  </nav>
+  <div class="container">
+    <h1>Account Restricted</h1>
+    <div class="error">
+      <p>Your account is restricted. Please pay your tuition fees to access your courses and results.</p>
+      <p>Contact the accounts department for assistance.</p>
+    </div>
+  </div>
+</body>
+</html>

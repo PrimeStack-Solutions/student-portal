@@ -7,12 +7,10 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>University Student Portal</h1>
-    <h2>Login</h2>
-    <% if (error) { %>
-      <p class="error"><%= error %></p>
-    <% } %>
+  <div class="container auth-card">
+    <h1>University Student Information System</h1>
+    <p>Secure access for applicants, students, administrators, and accountants.</p>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
     <form action="/login" method="POST">
       <label for="username">Username</label>
       <input type="text" id="username" name="username" required>
@@ -20,7 +18,18 @@
       <input type="password" id="password" name="password" required>
       <button type="submit">Login</button>
     </form>
-    <p><a href="/reset-password">Forgot your password?</a></p>
+    <div class="card" style="margin-top:16px;">
+      <h2>Demo credentials</h2>
+      <p><strong>Applicant:</strong> maya_applicant / password123</p>
+      <p><strong>Student:</strong> john_student / password123</p>
+      <p><strong>Student:</strong> jane_student / password123</p>
+      <p><strong>Admin:</strong> alice_admin / password123</p>
+      <p><strong>Accountant:</strong> bob_accountant / password123</p>
+    </div>
+    <div class="inline-links">
+      <a href="/register">Create applicant account</a>
+      <a href="/reset-password">Forgot password?</a>
+    </div>
   </div>
 </body>
 </html>

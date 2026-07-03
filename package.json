@@ -7,7 +7,12 @@
     "start": "node app.js",
     "setup-db": "node database/setup.js"
   },
-  "keywords": ["student", "portal", "rbac", "express"],
+  "keywords": [
+    "student",
+    "portal",
+    "rbac",
+    "express"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -15,6 +20,7 @@
     "better-sqlite3": "12.11.1",
     "ejs": "6.0.1",
     "express": "5.2.1",
-    "express-session": "1.19.0"
+    "express-session": "1.19.0",
+    "multer": "^2.2.0"
   }
 }

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applicant Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Applicant)</span>
+    <a href="/logout">Logout</a>
+  </nav>
+  <div class="container dashboard-grid">
+    <section class="card">
+      <h1>Application Center</h1>
+      <p><strong>Status:</strong> <%= applicant.status %></p>
+      <p><strong>Program:</strong> <%= applicant.program_choice %></p>
+      <p><strong>Intake:</strong> <%= applicant.intake %></p>
+      <p><strong>Fee Paid:</strong> <%= applicant.application_fee_paid ? 'Yes' : 'No' %></p>
+      <form action="/applicant/apply" method="POST" enctype="multipart/form-data">
+        <label>Full Name</label>
+        <input type="text" name="full_name" value="<%= user.full_name %>" required>
+        <label>Contact Details</label>
+        <input type="text" name="contact_details" value="<%= applicant.notes || '' %>" placeholder="Phone number, email, or address" required>
+        <label>Program Choice</label>
+        <select name="program_choice">
+          <optgroup label="School of Engineering">
+            <option value="Bachelor of Computer Engineering" <%= applicant.program_choice === 'Bachelor of Computer Engineering' ? 'selected' : '' %>>Bachelor of Computer Engineering</option>
+            <option value="Bachelor of Electrical Engineering" <%= applicant.program_choice === 'Bachelor of Electrical Engineering' ? 'selected' : '' %>>Bachelor of Electrical Engineering</option>
+            <option value="Bachelor of Mechanical Engineering" <%= applicant.program_choice === 'Bachelor of Mechanical Engineering' ? 'selected' : '' %>>Bachelor of Mechanical Engineering</option>
+          </optgroup>
+          <optgroup label="School of Law">
+            <option value="Bachelor of Commercial Law" <%= applicant.program_choice === 'Bachelor of Commercial Law' ? 'selected' : '' %>>Bachelor of Commercial Law</option>
+            <option value="Bachelor of International Law" <%= applicant.program_choice === 'Bachelor of International Law' ? 'selected' : '' %>>Bachelor of International Law</option>
+            <option value="Bachelor of Human Rights Law" <%= applicant.program_choice === 'Bachelor of Human Rights Law' ? 'selected' : '' %>>Bachelor of Human Rights Law</option>
+          </optgroup>
+          <optgroup label="School of Humanities">
+            <option value="Bachelor of English Literature" <%= applicant.program_choice === 'Bachelor of English Literature' ? 'selected' : '' %>>Bachelor of English Literature</option>
+            <option value="Bachelor of History and International Studies" <%= applicant.program_choice === 'Bachelor of History and International Studies' ? 'selected' : '' %>>Bachelor of History and International Studies</option>
+            <option value="Bachelor of Communication Studies" <%= applicant.program_choice === 'Bachelor of Communication Studies' ? 'selected' : '' %>>Bachelor of Communication Studies</option>
+          </optgroup>
+          <optgroup label="School of Business">
+            <option value="Bachelor of Accounting" <%= applicant.program_choice === 'Bachelor of Accounting' ? 'selected' : '' %>>Bachelor of Accounting</option>
+            <option value="Bachelor of Marketing" <%= applicant.program_choice === 'Bachelor of Marketing' ? 'selected' : '' %>>Bachelor of Marketing</option>
+            <option value="Bachelor of Business Administration" <%= applicant.program_choice === 'Bachelor of Business Administration' ? 'selected' : '' %>>Bachelor of Business Administration</option>
+          </optgroup>
+          <optgroup label="School of Natural Sciences">
+            <option value="Bachelor of Biology" <%= applicant.program_choice === 'Bachelor of Biology' ? 'selected' : '' %>>Bachelor of Biology</option>
+            <option value="Bachelor of Chemistry" <%= applicant.program_choice === 'Bachelor of Chemistry' ? 'selected' : '' %>>Bachelor of Chemistry</option>
+            <option value="Bachelor of Physics" <%= applicant.program_choice === 'Bachelor of Physics' ? 'selected' : '' %>>Bachelor of Physics</option>
+          </optgroup>
+          <optgroup label="School of Public Health">
+            <option value="Bachelor of Public Health" <%= applicant.program_choice === 'Bachelor of Public Health' ? 'selected' : '' %>>Bachelor of Public Health</option>
+            <option value="Bachelor of Epidemiology" <%= applicant.program_choice === 'Bachelor of Epidemiology' ? 'selected' : '' %>>Bachelor of Epidemiology</option>
+          </optgroup>
+          <optgroup label="School of Medicine and Surgery">
+            <option value="Bachelor of Medicine and Surgery" <%= applicant.program_choice === 'Bachelor of Medicine and Surgery' ? 'selected' : '' %>>Bachelor of Medicine and Surgery</option>
+            <option value="Bachelor of Nursing" <%= applicant.program_choice === 'Bachelor of Nursing' ? 'selected' : '' %>>Bachelor of Nursing</option>
+          </optgroup>
+        </select>
+        <label>Preferred Intake</label>
+        <select name="intake">
+          <option value="January" <%= applicant.intake === 'January' ? 'selected' : '' %>>January</option>
+          <option value="July" <%= applicant.intake === 'July' ? 'selected' : '' %>>July</option>
+        </select>
+        <label>Study Mode</label>
+        <select name="study_mode">
+          <option value="Full-time" <%= applicant.notes && applicant.notes.includes('Study Mode: Full-time') ? 'selected' : '' %>>Full-time</option>
+          <option value="Part-time" <%= applicant.notes && applicant.notes.includes('Study Mode: Part-time') ? 'selected' : '' %>>Part-time</option>
+          <option value="Distance Learning" <%= applicant.notes && applicant.notes.includes('Study Mode: Distance Learning') ? 'selected' : '' %>>Distance Learning</option>
+        </select>
+        <label>Notes</label>
+        <textarea name="notes"><%= applicant.notes %></textarea>
+        <label>Upload Documents</label>
+        <p class="hint">Required: National Registration Card or Passport for international students, proof of results, and any supporting documents.</p>
+        <input type="file" name="documents" multiple required>
+        <button type="submit">Submit Application</button>
+      </form>
+      <form action="/applicant/pay-fee" method="POST">
+        <button type="submit">Pay Application Fee</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Uploaded Documents</h2>
+      <% if (documents.length === 0) { %>
+        <p>No documents uploaded yet.</p>
+      <% } else { %>
+        <ul>
+          <% documents.forEach(doc => { %>
+            <li><%= doc.title %> — <a href="/uploads/<%= doc.file_name %>" target="_blank">View</a></li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>
