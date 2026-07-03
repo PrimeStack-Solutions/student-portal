@@ -6,8 +6,17 @@
 
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(135deg, #eef4ff, #f7fbff);
+  min-height: 100vh;
+  background: linear-gradient(120deg, #0f4c81, #1d6fb8, #5f5ef7, #ff7a59, #f7c948);
+  background-size: 400% 400%;
+  animation: gradientShift 16s ease infinite;
   color: #1f2937;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 nav {
