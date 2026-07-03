@@ -81,6 +81,8 @@
           <option value="Sudanese" <%= applicant.nationality === 'Sudanese' ? 'selected' : '' %>>Sudanese</option>
           <option value="Other" <%= applicant.nationality === 'Other' ? 'selected' : '' %>>Other</option>
         </select>
+        <label>National ID / Passport Number</label>
+        <input type="text" name="national_id" value="<%= applicant.national_id || '' %>" required>
         <label>Notes</label>
         <textarea name="notes"><%= applicant.notes %></textarea>
         <label>Upload Documents</label>
@@ -93,7 +95,8 @@
       </form>
       <h2>Upload Application Receipt</h2>
       <form action="/applicant/upload-application-receipt" method="POST" enctype="multipart/form-data">
-        <input type="file" name="receipt" required>
+        <input type="file" name="receipt" accept=".pdf" required>
+        <p class="hint">Only PDF receipts are accepted.</p>
         <button type="submit">Upload Receipt</button>
       </form>
       <p><strong>Receipt Status:</strong> <%= applicant.application_receipt_status %></p>

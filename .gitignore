@@ -1,2 +1,4 @@
 node_modules/
 database/portal.db
+database/portal.db-shm
+database/portal.db-wal

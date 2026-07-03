@@ -31,15 +31,28 @@
                 <% } %>
               </td>
               <td>
-                <form action="/accountant/toggle-payment" method="POST">
+                <form action="/accountant/approve-payment" method="POST" style="margin-bottom: 6px;">
                   <input type="hidden" name="student_id" value="<%= student.id %>">
-                  <button type="submit">Approve / Revoke</button>
+                  <button type="submit">Approve</button>
+                </form>
+                <form action="/accountant/revoke-payment" method="POST">
+                  <input type="hidden" name="student_id" value="<%= student.id %>">
+                  <input type="text" name="rejection_reason" placeholder="Reason for rejection" required>
+                  <button type="submit">Revoke</button>
                 </form>
               </td>
             </tr>
           <% }); %>
         </tbody>
       </table>
+    </section>
+    <section class="card">
+      <h2>Receipt Review</h2>
+      <ul>
+        <% receipts.forEach(receipt => { %>
+          <li><strong><%= receipt.full_name %></strong> (<%= receipt.type %>) — <%= receipt.status %> — <% if (receipt.file_name) { %><a href="/uploads/<%= receipt.file_name %>" target="_blank">View receipt</a><% } else { %>No receipt uploaded<% } %></li>
+        <% }); %>
+      </ul>
     </section>
     <section class="card">
       <h2>Payment Summary</h2>

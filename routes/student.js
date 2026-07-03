@@ -11,6 +11,18 @@ const upload = multer({
     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`)
   })
 });
+const pdfFilter = (req, file, cb) => {
+  const allowedExt = ['.pdf'];
+  const ext = path.extname(file.originalname).toLowerCase();
+  cb(null, allowedExt.includes(ext));
+};
+const assignmentFilter = (req, file, cb) => {
+  const allowedExt = ['.pdf', '.doc', '.docx'];
+  const ext = path.extname(file.originalname).toLowerCase();
+  cb(null, allowedExt.includes(ext));
+};
+const receiptUpload = multer({ storage: upload.storage, fileFilter: pdfFilter });
+const assignmentUpload = multer({ storage: upload.storage, fileFilter: assignmentFilter });
 
 router.get('/dashboard', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
@@ -84,7 +96,7 @@ router.post('/register-course', authorize('student'), (req, res) => {
   res.redirect('/student/dashboard');
 });
 
-router.post('/upload-tuition-receipt', authorize('student'), upload.single('receipt'), (req, res) => {
+router.post('/upload-tuition-receipt', authorize('student'), receiptUpload.single('receipt'), (req, res) => {
   if (!req.file) {
     return res.redirect('/student/dashboard');
   }
@@ -92,6 +104,16 @@ router.post('/upload-tuition-receipt', authorize('student'), upload.single('rece
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   db.prepare('UPDATE students SET tuition_receipt_file = ?, tuition_receipt_status = ? WHERE id = ?')
     .run(req.file.filename, 'pending', student.id);
+  res.redirect('/student/dashboard');
+});
+
+router.post('/upload-assignment', authorize('student'), assignmentUpload.single('assignment'), (req, res) => {
+  if (!req.file) {
+    return res.redirect('/student/dashboard');
+  }
+
+  db.prepare('INSERT INTO documents (user_id, title, file_name, file_type) VALUES (?, ?, ?, ?)')
+    .run(req.session.user.id, req.body.title || 'Assignment submission', req.file.filename, 'assignment');
   res.redirect('/student/dashboard');
 });
 

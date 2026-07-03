@@ -12,7 +12,7 @@
     <p>Secure access for applicants, students, administrators, and accountants.</p>
     <% if (error) { %><p class="error"><%= error %></p><% } %>
     <form action="/login" method="POST">
-      <label for="username">Username</label>
+      <label for="username">Username or Student Number</label>
       <input type="text" id="username" name="username" required>
       <label for="password">Password</label>
       <input type="password" id="password" name="password" required>

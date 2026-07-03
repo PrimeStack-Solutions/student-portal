@@ -25,6 +25,7 @@
           </form>
           <form action="/admin/reject-application" method="POST" style="display:inline-block">
             <input type="hidden" name="applicant_id" value="<%= applicant.id %>">
+            <input type="text" name="rejection_reason" placeholder="Reason for rejection" required>
             <button type="submit">Reject</button>
           </form>
         </div>

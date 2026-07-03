@@ -13,7 +13,14 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+  let user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+  if (!user) {
+    const student = db.prepare('SELECT u.* FROM students s JOIN users u ON u.id = s.user_id WHERE s.student_number IS NOT NULL AND TRIM(s.student_number) != "" AND s.student_number = ?').get(username);
+    if (student) {
+      user = student;
+    }
+  }
 
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.render('login', { error: 'Invalid username or password' });

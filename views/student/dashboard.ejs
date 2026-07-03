@@ -17,7 +17,7 @@
       <p><strong>Program:</strong> <%= student.program %></p>
       <p><strong>Year:</strong> <%= student.year_of_study %></p>
       <p><strong>GPA:</strong> <%= student.gpa %></p>
-      <p><strong>Outstanding Balance:</strong> $<%= student.tuition_balance %></p>
+      <p><strong>Outstanding Balance:</strong> KSh <%= (student.tuition_balance * 1600).toLocaleString() %> / $<%= Number(student.tuition_balance).toLocaleString() %></p>
       <h2>Update Profile</h2>
       <form action="/student/profile" method="POST">
         <label>Full Name</label>
@@ -133,7 +133,8 @@
       <h2>Upload Tuition Receipt</h2>
       <form action="/student/upload-tuition-receipt" method="POST" enctype="multipart/form-data">
         <label>Receipt File</label>
-        <input type="file" name="receipt" required>
+        <input type="file" name="receipt" accept=".pdf" required>
+        <p class="hint">Only PDF receipts are accepted for tuition verification.</p>
         <button type="submit">Upload</button>
       </form>
       <p><strong>Receipt Status:</strong> <%= student.tuition_receipt_status %></p>
@@ -149,6 +150,17 @@
       <ul>
         <% announcements.forEach(item => { %><li><strong><%= item.title %>:</strong> <%= item.body %></li><% }); %>
       </ul>
+    </section>
+    <section class="card">
+      <h2>Assignment Upload</h2>
+      <form action="/student/upload-assignment" method="POST" enctype="multipart/form-data">
+        <label>Assignment Title</label>
+        <input type="text" name="title" placeholder="Assignment 1">
+        <label>File</label>
+        <input type="file" name="assignment" accept=".pdf,.doc,.docx" required>
+        <p class="hint">Assignments are accepted in PDF, DOC, or DOCX format.</p>
+        <button type="submit">Submit Assignment</button>
+      </form>
     </section>
     <section class="card">
       <h2>Uploaded Documents</h2>
