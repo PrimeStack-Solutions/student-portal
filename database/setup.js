@@ -229,7 +229,8 @@ function ensureUser(username, role, fullName, email) {
 }
 
 const johnId = ensureUser('john_student', 'student', 'John Smith', 'john@university.edu');
-const janeId = ensureUser('jane_student', 'student', 'Jane Doe', 'jane@university.edu');
+const janeId = ensureUser('jane_student', 'student', 'John Phiri', 'jane@university.edu');
+db.prepare('UPDATE users SET full_name = ? WHERE username = ?').run('John Phiri', 'jane_student');
 const bobId = ensureUser('bob_accountant', 'accountant', 'Bob Wilson', 'bob@university.edu');
 const aliceId = ensureUser('alice_admin', 'admin', 'Alice Johnson', 'alice@university.edu');
 const mayaId = ensureUser('maya_applicant', 'applicant', 'Maya Chen', 'maya@university.edu');

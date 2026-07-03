@@ -32,7 +32,7 @@ A Node.js web application demonstrating Role-Based Access Control (RBAC) with th
 | Username | Password | Role |
 |----------|----------|------|
 | john_student | password123 | Student |
-| jane_student | password123 | Student |
+| jane_student | password123 | Student (John Phiri) |
 | bob_accountant | password123 | Accountant |
 | alice_admin | password123 | Admin |
 
