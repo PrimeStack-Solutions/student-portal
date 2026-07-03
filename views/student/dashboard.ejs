@@ -79,17 +79,27 @@
           <% }); %>
         </select>
         <label>Semester</label>
-        <input type="text" name="semester" value="Fall">
+        <select name="semester">
+          <option value="Semester 1">Semester 1</option>
+          <option value="Semester 2">Semester 2</option>
+          <option value="Semester 3">Semester 3</option>
+          <option value="Semester 4">Semester 4</option>
+          <option value="Semester 5">Semester 5</option>
+          <option value="Semester 6">Semester 6</option>
+          <option value="Semester 7">Semester 7</option>
+          <option value="Semester 8">Semester 8</option>
+        </select>
         <button type="submit">Register</button>
       </form>
       <h2>My Courses</h2>
       <table>
-        <thead><tr><th>Code</th><th>Name</th><th>Status</th><th>Grade</th><th>Action</th></tr></thead>
+        <thead><tr><th>Code</th><th>Name</th><th>Semester</th><th>Status</th><th>Grade</th><th>Action</th></tr></thead>
         <tbody>
           <% enrollments.forEach(enrollment => { %>
             <tr>
               <td><%= enrollment.code %></td>
               <td><%= enrollment.name %></td>
+              <td><%= enrollment.semester || 'N/A' %></td>
               <td><%= enrollment.status %></td>
               <td><%= enrollment.grade || 'Pending' %></td>
               <td>
@@ -102,6 +112,34 @@
           <% }); %>
         </tbody>
       </table>
+    </section>
+    <section class="card">
+      <h2>Results</h2>
+      <table>
+        <thead><tr><th>Semester</th><th>Course</th><th>Grade</th><th>GPA</th></tr></thead>
+        <tbody>
+          <% results.forEach(result => { %>
+            <tr>
+              <td><%= result.semester %></td>
+              <td><%= result.code %> - <%= result.name %></td>
+              <td><%= result.grade %></td>
+              <td><%= result.gpa %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Upload Tuition Receipt</h2>
+      <form action="/student/upload-tuition-receipt" method="POST" enctype="multipart/form-data">
+        <label>Receipt File</label>
+        <input type="file" name="receipt" required>
+        <button type="submit">Upload</button>
+      </form>
+      <p><strong>Receipt Status:</strong> <%= student.tuition_receipt_status %></p>
+      <% if (student.tuition_receipt_file) { %>
+        <p><a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View uploaded receipt</a></p>
+      <% } %>
     </section>
     <section class="card">
       <h2>Payments & Announcements</h2>

@@ -17,6 +17,7 @@
       <p><strong>Status:</strong> <%= applicant.status %></p>
       <p><strong>Program:</strong> <%= applicant.program_choice %></p>
       <p><strong>Intake:</strong> <%= applicant.intake %></p>
+      <p><strong>Nationality:</strong> <%= applicant.nationality || 'Not specified' %></p>
       <p><strong>Fee Paid:</strong> <%= applicant.application_fee_paid ? 'Yes' : 'No' %></p>
       <form action="/applicant/apply" method="POST" enctype="multipart/form-data">
         <label>Full Name</label>
@@ -70,6 +71,16 @@
           <option value="Part-time" <%= applicant.notes && applicant.notes.includes('Study Mode: Part-time') ? 'selected' : '' %>>Part-time</option>
           <option value="Distance Learning" <%= applicant.notes && applicant.notes.includes('Study Mode: Distance Learning') ? 'selected' : '' %>>Distance Learning</option>
         </select>
+        <label>Nationality</label>
+        <select name="nationality" required>
+          <option value="" <%= !applicant.nationality || applicant.nationality === 'Not specified' ? 'selected' : '' %>>Choose nationality</option>
+          <option value="Kenyan" <%= applicant.nationality === 'Kenyan' ? 'selected' : '' %>>Kenyan</option>
+          <option value="Ugandan" <%= applicant.nationality === 'Ugandan' ? 'selected' : '' %>>Ugandan</option>
+          <option value="Tanzanian" <%= applicant.nationality === 'Tanzanian' ? 'selected' : '' %>>Tanzanian</option>
+          <option value="Rwandan" <%= applicant.nationality === 'Rwandan' ? 'selected' : '' %>>Rwandan</option>
+          <option value="Sudanese" <%= applicant.nationality === 'Sudanese' ? 'selected' : '' %>>Sudanese</option>
+          <option value="Other" <%= applicant.nationality === 'Other' ? 'selected' : '' %>>Other</option>
+        </select>
         <label>Notes</label>
         <textarea name="notes"><%= applicant.notes %></textarea>
         <label>Upload Documents</label>
@@ -80,6 +91,15 @@
       <form action="/applicant/pay-fee" method="POST">
         <button type="submit">Pay Application Fee</button>
       </form>
+      <h2>Upload Application Receipt</h2>
+      <form action="/applicant/upload-application-receipt" method="POST" enctype="multipart/form-data">
+        <input type="file" name="receipt" required>
+        <button type="submit">Upload Receipt</button>
+      </form>
+      <p><strong>Receipt Status:</strong> <%= applicant.application_receipt_status %></p>
+      <% if (applicant.application_receipt_file) { %>
+        <p><a href="/uploads/<%= applicant.application_receipt_file %>" target="_blank">View uploaded receipt</a></p>
+      <% } %>
     </section>
     <section class="card">
       <h2>Uploaded Documents</h2>

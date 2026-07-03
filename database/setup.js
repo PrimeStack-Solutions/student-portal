@@ -27,9 +27,12 @@ db.exec(`
     program_choice TEXT DEFAULT 'Undecided',
     intake TEXT DEFAULT 'Fall 2026',
     study_mode TEXT DEFAULT 'Full-time',
+    nationality TEXT DEFAULT 'Not specified',
     status TEXT DEFAULT 'submitted',
     documents TEXT DEFAULT '',
     application_fee_paid INTEGER DEFAULT 0,
+    application_receipt_file TEXT DEFAULT '',
+    application_receipt_status TEXT DEFAULT 'pending',
     notes TEXT DEFAULT '',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -46,6 +49,9 @@ db.exec(`
     gpa REAL DEFAULT 0,
     tuition_balance REAL DEFAULT 0,
     status TEXT DEFAULT 'active',
+    portal_access TEXT DEFAULT 'blocked',
+    tuition_receipt_file TEXT DEFAULT '',
+    tuition_receipt_status TEXT DEFAULT 'pending',
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
@@ -128,12 +134,12 @@ const insertUser = db.prepare(`
   VALUES (?, ?, ?, ?, ?)
 `);
 const insertApplicant = db.prepare(`
-  INSERT INTO applicants (user_id, program_choice, intake, study_mode, status, application_fee_paid, notes)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO applicants (user_id, program_choice, intake, study_mode, nationality, status, application_fee_paid, application_receipt_file, application_receipt_status, notes)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 const insertStudent = db.prepare(`
-  INSERT INTO students (user_id, student_code, program, year_of_study, phone, address, gpa, tuition_balance, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO students (user_id, student_code, program, year_of_study, phone, address, gpa, tuition_balance, status, portal_access, tuition_receipt_file, tuition_receipt_status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 const insertAdmin = db.prepare(`
   INSERT INTO admins (user_id, department, role) VALUES (?, ?, ?)
@@ -175,17 +181,17 @@ const mayaId = ensureUser('maya_applicant', 'applicant', 'Maya Chen', 'maya@univ
 
 const existingApplicant = db.prepare('SELECT id FROM applicants WHERE user_id = ?').get(mayaId);
 if (!existingApplicant) {
-  insertApplicant.run(mayaId, 'Bachelor of Computer Engineering', 'January', 'Full-time', 'under review', 1, 'Official transcript attached');
+  insertApplicant.run(mayaId, 'Bachelor of Computer Engineering', 'January', 'Full-time', 'Kenyan', 'under review', 1, 'app-receipt.pdf', 'approved', 'Official transcript attached');
 }
 
 const existingStudentJohn = db.prepare('SELECT id FROM students WHERE user_id = ?').get(johnId);
 if (!existingStudentJohn) {
-  insertStudent.run(johnId, 'STU1001', 'Bachelor of Computer Engineering', 2, '+1 555-0101', '12 Elm Street', 3.7, 0, 'active');
+  insertStudent.run(johnId, 'STU1001', 'Bachelor of Computer Engineering', 2, '+1 555-0101', '12 Elm Street', 3.7, 250, 'active', 'blocked', '', 'pending');
 }
 
 const existingStudentJane = db.prepare('SELECT id FROM students WHERE user_id = ?').get(janeId);
 if (!existingStudentJane) {
-  insertStudent.run(janeId, 'STU1002', 'Bachelor of Business Administration', 1, '+1 555-0102', '14 Oak Avenue', 3.2, 250, 'active');
+  insertStudent.run(janeId, 'STU1002', 'Bachelor of Business Administration', 1, '+1 555-0102', '14 Oak Avenue', 3.2, 0, 'active', 'granted', 'tuition-receipt.pdf', 'approved');
 }
 
 const existingAdmin = db.prepare('SELECT id FROM admins WHERE user_id = ?').get(aliceId);

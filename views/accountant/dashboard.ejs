@@ -16,7 +16,7 @@
       <h1>Finance Dashboard</h1>
       <p>Manage invoices, reconcile accounts, and review payment trends.</p>
       <table>
-        <thead><tr><th>Student</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead>
+        <thead><tr><th>Student</th><th>Email</th><th>Balance</th><th>Receipt</th><th>Action</th></tr></thead>
         <tbody>
           <% students.forEach(student => { %>
             <tr>
@@ -24,9 +24,16 @@
               <td><%= student.email %></td>
               <td>$<%= student.tuition_balance %></td>
               <td>
+                <% if (student.tuition_receipt_file) { %>
+                  <a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View</a>
+                <% } else { %>
+                  None
+                <% } %>
+              </td>
+              <td>
                 <form action="/accountant/toggle-payment" method="POST">
                   <input type="hidden" name="student_id" value="<%= student.id %>">
-                  <button type="submit">Toggle</button>
+                  <button type="submit">Approve / Revoke</button>
                 </form>
               </td>
             </tr>

@@ -80,7 +80,13 @@ router.get('/dashboard', (req, res) => {
   }
 
   const role = req.session.user.role;
-  if (role === 'student') return res.redirect('/student/dashboard');
+  if (role === 'student') {
+    const student = db.prepare('SELECT portal_access FROM students WHERE user_id = ?').get(req.session.user.id);
+    if (student && student.portal_access === 'blocked') {
+      return res.redirect('/student/blocked');
+    }
+    return res.redirect('/student/dashboard');
+  }
   if (role === 'accountant') return res.redirect('/accountant/dashboard');
   if (role === 'admin') return res.redirect('/admin/dashboard');
   if (role === 'applicant') return res.redirect('/applicant/dashboard');

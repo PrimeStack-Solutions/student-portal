@@ -24,10 +24,10 @@ router.get('/dashboard', authorize('applicant'), (req, res) => {
 });
 
 router.post('/apply', authorize('applicant'), upload.array('documents', 5), (req, res) => {
-  const { full_name, contact_details, program_choice, intake, study_mode, notes } = req.body;
+  const { full_name, contact_details, program_choice, intake, study_mode, nationality, notes } = req.body;
   db.prepare('UPDATE users SET full_name = ? WHERE id = ?').run(full_name, req.session.user.id);
-  db.prepare('UPDATE applicants SET program_choice = ?, intake = ?, study_mode = ?, status = ?, notes = ? WHERE user_id = ?')
-    .run(program_choice, intake, study_mode || 'Full-time', 'submitted', `${notes || ''} | Contact: ${contact_details} | Study Mode: ${study_mode || 'Full-time'}`, req.session.user.id);
+  db.prepare('UPDATE applicants SET program_choice = ?, intake = ?, study_mode = ?, nationality = ?, status = ?, notes = ? WHERE user_id = ?')
+    .run(program_choice, intake, study_mode || 'Full-time', nationality || 'Not specified', 'submitted', `${notes || ''} | Contact: ${contact_details} | Study Mode: ${study_mode || 'Full-time'}`, req.session.user.id);
 
   if (req.files && req.files.length) {
     const insertDocument = db.prepare('INSERT INTO documents (user_id, title, file_name, file_type) VALUES (?, ?, ?, ?)');
@@ -39,6 +39,16 @@ router.post('/apply', authorize('applicant'), upload.array('documents', 5), (req
 
 router.post('/pay-fee', authorize('applicant'), (req, res) => {
   db.prepare('UPDATE applicants SET application_fee_paid = ? WHERE user_id = ?').run(1, req.session.user.id);
+  res.redirect('/applicant/dashboard');
+});
+
+router.post('/upload-application-receipt', authorize('applicant'), upload.single('receipt'), (req, res) => {
+  if (!req.file) {
+    return res.redirect('/applicant/dashboard');
+  }
+
+  db.prepare('UPDATE applicants SET application_receipt_file = ?, application_receipt_status = ? WHERE user_id = ?')
+    .run(req.file.filename, 'pending', req.session.user.id);
   res.redirect('/applicant/dashboard');
 });
 

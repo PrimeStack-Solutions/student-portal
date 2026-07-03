@@ -11,6 +11,7 @@ const db = require('./database/setup');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -78,6 +79,7 @@ app.post('/api/applications', (req, res) => {
   res.json({ id: result.lastInsertRowid, message: 'Application recorded' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Student Portal running at http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Student Portal running at http://${HOST}:${PORT}`);
+  console.log(`Also available at http://localhost:${PORT}`);
 });
