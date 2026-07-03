@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
@@ -18,6 +19,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+fs.mkdirSync(path.join(__dirname, 'public', 'uploads'), { recursive: true });
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: 'student-portal-secret-key',

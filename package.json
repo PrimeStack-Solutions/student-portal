@@ -7,12 +7,7 @@
     "start": "node app.js",
     "setup-db": "node database/setup.js"
   },
-  "keywords": [
-    "student",
-    "portal",
-    "rbac",
-    "express"
-  ],
+  "keywords": ["student", "portal", "rbac", "express"],
   "author": "",
   "license": "MIT",
   "dependencies": {

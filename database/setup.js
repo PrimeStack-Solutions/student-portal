@@ -4,10 +4,6 @@ const fs = require('fs');
 const path = require('path');
 
 const dbPath = path.join(__dirname, 'portal.db');
-if (fs.existsSync(dbPath)) {
-  fs.unlinkSync(dbPath);
-}
-
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
@@ -143,6 +139,47 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
+
+function columnExists(table, column) {
+  return db.prepare(`PRAGMA table_info(${table})`).all().some(col => col.name === column);
+}
+
+function addColumnIfMissing(table, columnName, definition) {
+  if (!columnExists(table, columnName)) {
+    db.prepare(`ALTER TABLE ${table} ADD COLUMN ${definition}`).run();
+  }
+}
+
+addColumnIfMissing('applicants', 'study_mode', "study_mode TEXT DEFAULT 'Full-time'");
+addColumnIfMissing('applicants', 'nationality', "nationality TEXT DEFAULT 'Not specified'");
+addColumnIfMissing('applicants', 'national_id', "national_id TEXT DEFAULT ''");
+addColumnIfMissing('applicants', 'student_number', "student_number TEXT DEFAULT ''");
+addColumnIfMissing('applicants', 'status', "status TEXT DEFAULT 'submitted'");
+addColumnIfMissing('applicants', 'documents', "documents TEXT DEFAULT ''");
+addColumnIfMissing('applicants', 'application_fee_paid', "application_fee_paid INTEGER DEFAULT 0");
+addColumnIfMissing('applicants', 'application_receipt_file', "application_receipt_file TEXT DEFAULT ''");
+addColumnIfMissing('applicants', 'application_receipt_status', "application_receipt_status TEXT DEFAULT 'pending'");
+addColumnIfMissing('applicants', 'notes', "notes TEXT DEFAULT ''");
+addColumnIfMissing('applicants', 'rejection_reason', "rejection_reason TEXT DEFAULT ''");
+addColumnIfMissing('applicants', 'created_at', "created_at TEXT DEFAULT CURRENT_TIMESTAMP");
+
+addColumnIfMissing('students', 'student_code', "student_code TEXT DEFAULT ''");
+addColumnIfMissing('students', 'student_number', "student_number TEXT DEFAULT ''");
+addColumnIfMissing('students', 'program', "program TEXT DEFAULT 'General Studies'");
+addColumnIfMissing('students', 'year_of_study', "year_of_study INTEGER DEFAULT 1");
+addColumnIfMissing('students', 'phone', "phone TEXT DEFAULT ''");
+addColumnIfMissing('students', 'address', "address TEXT DEFAULT ''");
+addColumnIfMissing('students', 'gpa', "gpa REAL DEFAULT 0");
+addColumnIfMissing('students', 'tuition_balance', "tuition_balance REAL DEFAULT 0");
+addColumnIfMissing('students', 'status', "status TEXT DEFAULT 'active'");
+addColumnIfMissing('students', 'portal_access', "portal_access TEXT DEFAULT 'blocked'");
+addColumnIfMissing('students', 'tuition_receipt_file', "tuition_receipt_file TEXT DEFAULT ''");
+addColumnIfMissing('students', 'tuition_receipt_status', "tuition_receipt_status TEXT DEFAULT 'pending'");
+addColumnIfMissing('students', 'tuition_rejection_reason', "tuition_rejection_reason TEXT DEFAULT ''");
+
+addColumnIfMissing('courses', 'credits', "credits INTEGER DEFAULT 3");
+addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Fall'");
+addColumnIfMissing('courses', 'prerequisite', "prerequisite TEXT DEFAULT ''");
 
 const insertUser = db.prepare(`
   INSERT INTO users (username, password_hash, role, full_name, email)
