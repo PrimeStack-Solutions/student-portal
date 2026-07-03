@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <a href="/logout">Logout</a>
+  </nav>
+  <div class="container">
+    <h1>My Courses and Results</h1>
+    <% if (enrollments.length === 0) { %>
+      <p>You are not enrolled in any courses yet.</p>
+    <% } else { %>
+      <table>
+        <thead>
+          <tr>
+            <th>Course Code</th>
+            <th>Course Name</th>
+            <th>Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% enrollments.forEach(enrollment => { %>
+            <tr>
+              <td><%= enrollment.code %></td>
+              <td><%= enrollment.name %></td>
+              <td><%= enrollment.grade %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</body>
+</html>

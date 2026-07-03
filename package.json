@@ -1,0 +1,20 @@
+{
+  "name": "student-portal",
+  "version": "1.0.0",
+  "description": "University Student Information System with Role-Based Access Control",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "setup-db": "node database/setup.js"
+  },
+  "keywords": ["student", "portal", "rbac", "express"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "3.0.3",
+    "better-sqlite3": "12.11.1",
+    "ejs": "6.0.1",
+    "express": "5.2.1",
+    "express-session": "1.19.0"
+  }
+}

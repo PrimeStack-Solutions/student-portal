@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accountant Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Accountant)</span>
+    <a href="/logout">Logout</a>
+  </nav>
+  <div class="container">
+    <h1>Student Tuition Status</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Tuition Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% students.forEach(student => { %>
+          <tr>
+            <td><%= student.username %></td>
+            <td><%= student.full_name %></td>
+            <td><%= student.email %></td>
+            <td class="<%= student.tuition_paid ? 'paid' : 'unpaid' %>">
+              <%= student.tuition_paid ? 'Paid' : 'Not Paid' %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
