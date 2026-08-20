@@ -9,7 +9,13 @@
 <body>
   <nav>
     <span>Welcome, <%= user.full_name %> (Student)</span>
-    <a href="/logout">Logout</a>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/results">Results</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/logout">Logout</a>
+    </div>
   </nav>
   <div class="container dashboard-grid">
     <section class="card">
@@ -144,12 +150,15 @@
     </section>
     <section class="card">
       <h2>Payments & Announcements</h2>
+      <h3>Recent payments</h3>
       <ul>
         <% payments.forEach(payment => { %><li><%= payment.payment_date %> — $<%= payment.amount %> (<%= payment.status %>)</li><% }); %>
       </ul>
+      <h3>Latest announcements</h3>
       <ul>
         <% announcements.forEach(item => { %><li><strong><%= item.title %>:</strong> <%= item.body %></li><% }); %>
       </ul>
+      <p><a href="/student/announcements">View all announcements</a></p>
     </section>
     <section class="card">
       <h2>Assignment Upload</h2>

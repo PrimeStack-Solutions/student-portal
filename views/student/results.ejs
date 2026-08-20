@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Results</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/results">Results</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Results Dashboard</h1>
+    <% if (!results.length) { %>
+      <section class="card">
+        <p>No results have been published for you yet.</p>
+      </section>
+    <% } else { %>
+      <% Object.keys(groupedResults).forEach(semester => { %>
+        <section class="card">
+          <h2><%= semester %></h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Grade</th>
+                <th>GPA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% groupedResults[semester].forEach(result => { %>
+                <tr>
+                  <td><%= result.code %> - <%= result.name %></td>
+                  <td><%= result.grade %></td>
+                  <td><%= result.gpa %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </section>
+      <% }); %>
+    <% } %>
+  </div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcements</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/results">Results</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Main Dashboard - Announcements</h1>
+    <div class="dashboard-grid">
+      <% announcements.forEach(item => { %>
+        <section class="card">
+          <h2><%= item.title %></h2>
+          <p><%= item.body %></p>
+          <small><%= new Date(item.created_at).toLocaleString() %></small>
+        </section>
+      <% }); %>
+    </div>
+  </div>
+</body>
+</html>

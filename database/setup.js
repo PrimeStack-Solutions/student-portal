@@ -119,6 +119,19 @@ db.exec(`
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS materials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    file_name TEXT NOT NULL,
+    file_type TEXT DEFAULT 'application/pdf',
+    uploaded_by INTEGER NOT NULL,
+    uploaded_by_name TEXT DEFAULT '',
+    category TEXT DEFAULT 'General',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id)
+  );
+
   CREATE TABLE IF NOT EXISTS documents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -217,6 +230,9 @@ const insertPayment = db.prepare(`
 const insertAnnouncement = db.prepare(`
   INSERT OR IGNORE INTO announcements (title, body) VALUES (?, ?)
 `);
+const insertMaterial = db.prepare(`
+  INSERT OR IGNORE INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
 
 const passwordHash = bcrypt.hashSync('password123', 10);
 
@@ -278,6 +294,9 @@ insertPayment.run(johnStudentId, 1500, '2026-06-01', 'completed', 'Tuition');
 insertPayment.run(janeStudentId, 250, '2026-06-15', 'pending', 'Registration Fee');
 insertAnnouncement.run('Welcome to the New SIS Portal', 'Please review your application status and stay up to date with deadlines.');
 insertAnnouncement.run('Campus Update', 'The university will open the student services portal for new intake on July 10.');
+insertMaterial.run('Computer Science Essentials', 'Core revision notes for first-year programming and systems classes.', 'computer-science-essentials.pdf', 'application/pdf', aliceId, 'Alice Johnson', 'Core Course');
+insertMaterial.run('Business Administration Handbook', 'A practical reference guide for business strategy and operations.', 'business-administration-handbook.pdf', 'application/pdf', aliceId, 'Alice Johnson', 'Program Guide');
+insertMaterial.run('Research Methods Workbook', 'Download this workbook to prepare for your research modules and assignments.', 'research-methods-workbook.pdf', 'application/pdf', bobId, 'Bob Wilson', 'Academic Support');
 insertNotification.run(johnId, 'Welcome', 'Your student portal access is pending tuition approval.', 'email');
 insertNotification.run(johnId, 'Welcome SMS', 'Your student portal access is pending tuition approval.', 'sms');
 

@@ -1,8 +1,21 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const db = require('../database/setup');
 const { authorize } = require('../middleware/auth');
 
 const router = express.Router();
+const materialUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'public', 'uploads')),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`)
+  }),
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, allowed.includes(ext));
+  }
+});
 
 router.get('/dashboard', authorize('admin'), (req, res) => {
   const students = db.prepare(`
@@ -99,6 +112,17 @@ router.post('/create-course', authorize('admin'), (req, res) => {
 router.post('/publish-announcement', authorize('admin'), (req, res) => {
   const { title, body } = req.body;
   db.prepare('INSERT INTO announcements (title, body) VALUES (?, ?)').run(title, body);
+  res.redirect('/admin/dashboard');
+});
+
+router.post('/upload-material', authorize('admin'), materialUpload.single('material'), (req, res) => {
+  if (!req.file) {
+    return res.redirect('/admin/dashboard');
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  db.prepare('INSERT INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(req.body.title || 'Study material', req.body.description || 'Shared learning resource', req.file.filename, req.file.mimetype, user.id, user.full_name, req.body.category || 'General');
   res.redirect('/admin/dashboard');
 });
 

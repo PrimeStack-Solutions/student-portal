@@ -16,6 +16,7 @@ const pdfFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   cb(null, allowedExt.includes(ext));
 };
+const materialUpload = multer({ storage: upload.storage, fileFilter: pdfFilter });
 const assignmentFilter = (req, file, cb) => {
   const allowedExt = ['.pdf', '.doc', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
@@ -70,6 +71,57 @@ router.get('/dashboard', authorize('student'), (req, res) => {
     results,
     error: null,
     success: null
+  });
+});
+
+router.get('/announcements', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC').all();
+  res.render('student/announcements', { user: userRow, student, announcements });
+});
+
+router.get('/results', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const results = db.prepare(`
+    SELECT g.semester, c.code, c.name, g.grade, g.gpa
+    FROM grades g
+    JOIN courses c ON c.id = g.course_id
+    WHERE g.student_id = ?
+    ORDER BY g.semester, c.code
+  `).all(student.id);
+
+  const groupedResults = results.reduce((acc, result) => {
+    const semester = result.semester || 'Unspecified';
+    if (!acc[semester]) acc[semester] = [];
+    acc[semester].push(result);
+    return acc;
+  }, {});
+
+  res.render('student/results', {
+    user: userRow,
+    student,
+    groupedResults,
+    results,
+    semesters: Object.keys(groupedResults)
+  });
+});
+
+router.get('/materials', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const materials = db.prepare(`
+    SELECT m.*, u.full_name AS uploaded_by_name
+    FROM materials m
+    LEFT JOIN users u ON u.id = m.uploaded_by
+    ORDER BY m.id DESC
+  `).all();
+
+  res.render('student/materials', {
+    user: userRow,
+    student,
+    materials
   });
 });
 
@@ -132,6 +184,17 @@ router.post('/upload-document', authorize('student'), upload.single('doc'), (req
   db.prepare('INSERT INTO documents (user_id, title, file_name, file_type) VALUES (?, ?, ?, ?)')
     .run(req.session.user.id, req.body.title || 'Uploaded document', req.file.filename, req.file.mimetype);
   res.redirect('/student/dashboard');
+});
+
+router.post('/upload-material', authorize('student'), materialUpload.single('material'), (req, res) => {
+  if (!req.file) {
+    return res.redirect('/student/materials');
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  db.prepare('INSERT INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(req.body.title || 'Study material', req.body.description || 'Shared learning resource', req.file.filename, req.file.mimetype, user.id, user.full_name, req.body.category || 'General');
+  res.redirect('/student/materials');
 });
 
 module.exports = router;
