@@ -16,7 +16,7 @@
       <h1>Finance Dashboard</h1>
       <p>Manage invoices, reconcile accounts, and review payment trends.</p>
       <table>
-        <thead><tr><th>Student</th><th>Email</th><th>Balance</th><th>Receipt</th><th>Action</th></tr></thead>
+        <thead><tr><th>Student</th><th>Email</th><th>Balance</th><th>Tuition Receipt</th><th>Balance Receipt</th><th>Action</th></tr></thead>
         <tbody>
           <% students.forEach(student => { %>
             <tr>
@@ -26,6 +26,25 @@
               <td>
                 <% if (student.tuition_receipt_file) { %>
                   <a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View</a>
+                <% } else { %>
+                  None
+                <% } %>
+              </td>
+              <td>
+                <% if (student.balance_payment_receipt_file) { %>
+                  <a href="/uploads/<%= student.balance_payment_receipt_file %>" target="_blank">View</a><br>
+                  <small>Ref: <%= student.balance_payment_reference %><br>Amt: $<%= student.balance_payment_amount %><br>Status: <%= student.balance_payment_status %></small>
+                  <% if (student.balance_payment_status === 'pending') { %>
+                    <form action="/accountant/approve-balance-payment" method="POST" style="margin-top: 8px;">
+                      <input type="hidden" name="student_id" value="<%= student.id %>">
+                      <button type="submit">Approve Balance</button>
+                    </form>
+                    <form action="/accountant/reject-balance-payment" method="POST" style="margin-top: 8px;">
+                      <input type="hidden" name="student_id" value="<%= student.id %>">
+                      <input type="text" name="rejection_reason" placeholder="Rejection reason" required>
+                      <button type="submit">Reject Balance</button>
+                    </form>
+                  <% } %>
                 <% } else { %>
                   None
                 <% } %>

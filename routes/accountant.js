@@ -4,9 +4,10 @@ const { authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/dashboard', authorize('accountant'), (req, res) => {
+router.get('/dashboard', authorize('accountant', 'admin'), (req, res) => {
   const students = db.prepare(`
-    SELECT s.id, u.full_name, u.email, s.tuition_balance, s.tuition_receipt_file, s.tuition_receipt_status
+    SELECT s.id, u.full_name, u.email, s.tuition_balance, s.tuition_receipt_file, s.tuition_receipt_status,
+      s.balance_payment_receipt_file, s.balance_payment_status, s.balance_payment_amount, s.balance_payment_reference
     FROM students s
     JOIN users u ON s.user_id = u.id
     ORDER BY u.full_name
@@ -48,6 +49,32 @@ router.post('/revoke-payment', authorize('accountant'), (req, res) => {
     .run(student.user_id, 'Tuition Receipt Rejected', `Hello ${student.full_name}, your tuition receipt was rejected. Reason: ${rejection_reason || 'Receipt was unclear or incomplete.'}`, 'email');
   db.prepare('INSERT INTO notifications (user_id, title, message, delivery_mode) VALUES (?, ?, ?, ?)')
     .run(student.user_id, 'Tuition Receipt Rejected SMS', `Your tuition receipt was rejected. Reason: ${rejection_reason || 'Receipt was unclear or incomplete.'}`, 'sms');
+  res.redirect('/accountant/dashboard');
+});
+
+router.post('/approve-balance-payment', authorize('accountant', 'admin'), (req, res) => {
+  const { student_id } = req.body;
+  const student = db.prepare('SELECT u.full_name, u.id AS user_id, s.tuition_balance, s.balance_payment_amount FROM students s JOIN users u ON u.id = s.user_id WHERE s.id = ?').get(student_id);
+  const balance = Number(student.tuition_balance || 0);
+  const paymentAmount = Number(student.balance_payment_amount || 0);
+  const updatedBalance = Math.max(0, balance - paymentAmount);
+
+  db.prepare('UPDATE students SET tuition_balance = ?, balance_payment_status = ?, balance_payment_amount = 0, balance_payment_reference = ? WHERE id = ?')
+    .run(updatedBalance, 'approved', 'Approved by finance office', student_id);
+  db.prepare('INSERT INTO payments (student_id, amount, payment_date, status, purpose) VALUES (?, ?, ?, ?, ?)')
+    .run(student_id, paymentAmount, new Date().toISOString(), 'approved', 'Balance payment approval');
+  db.prepare('INSERT INTO notifications (user_id, title, message, delivery_mode) VALUES (?, ?, ?, ?)')
+    .run(student.user_id, 'Balance Payment Approved', `Hello ${student.full_name}, your balance payment has been approved.`, 'email');
+  res.redirect('/accountant/dashboard');
+});
+
+router.post('/reject-balance-payment', authorize('accountant', 'admin'), (req, res) => {
+  const { student_id, rejection_reason } = req.body;
+  const student = db.prepare('SELECT u.full_name, u.id AS user_id FROM students s JOIN users u ON u.id = s.user_id WHERE s.id = ?').get(student_id);
+  db.prepare('UPDATE students SET balance_payment_status = ?, balance_payment_amount = 0, balance_payment_reference = ? WHERE id = ?')
+    .run('rejected', rejection_reason || 'Receipt not verified.', student_id);
+  db.prepare('INSERT INTO notifications (user_id, title, message, delivery_mode) VALUES (?, ?, ?, ?)')
+    .run(student.user_id, 'Balance Payment Rejected', `Hello ${student.full_name}, your payment receipt was rejected. Reason: ${rejection_reason || 'Receipt not verified.'}`, 'email');
   res.redirect('/accountant/dashboard');
 });
 

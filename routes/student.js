@@ -23,6 +23,7 @@ const assignmentFilter = (req, file, cb) => {
   cb(null, allowedExt.includes(ext));
 };
 const receiptUpload = multer({ storage: upload.storage, fileFilter: pdfFilter });
+const balanceReceiptUpload = multer({ storage: upload.storage, fileFilter: pdfFilter });
 const assignmentUpload = multer({ storage: upload.storage, fileFilter: assignmentFilter });
 
 router.get('/dashboard', authorize('student'), (req, res) => {
@@ -193,10 +194,22 @@ router.post('/pay-balance', authorize('student'), (req, res) => {
   const availableBalance = Number(student.tuition_balance || 0);
   const actualPayment = Math.min(amount, availableBalance);
   db.prepare('INSERT INTO payments (student_id, amount, payment_date, status, purpose) VALUES (?, ?, ?, ?, ?)')
-    .run(student.id, actualPayment, new Date().toISOString(), 'completed', 'Balance payment');
+    .run(student.id, actualPayment, new Date().toISOString(), 'pending', 'Balance payment');
 
-  db.prepare('UPDATE students SET tuition_balance = ? WHERE id = ?')
-    .run(Math.max(0, availableBalance - actualPayment), student.id);
+  db.prepare('UPDATE students SET tuition_balance = ?, balance_payment_amount = ?, balance_payment_reference = ?, balance_payment_status = ? WHERE id = ?')
+    .run(availableBalance, actualPayment, req.body.reference || 'Manual balance payment', 'pending', student.id);
+
+  res.redirect('/student/payments');
+});
+
+router.post('/upload-balance-payment-receipt', authorize('student'), balanceReceiptUpload.single('balance_receipt'), (req, res) => {
+  if (!req.file) {
+    return res.redirect('/student/payments');
+  }
+
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  db.prepare('UPDATE students SET balance_payment_receipt_file = ?, balance_payment_status = ?, balance_payment_reference = ?, balance_payment_amount = ? WHERE id = ?')
+    .run(req.file.filename, 'pending', req.body.reference || 'Balance payment receipt', Number(req.body.amount || 0), student.id);
 
   res.redirect('/student/payments');
 });

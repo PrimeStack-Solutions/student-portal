@@ -63,9 +63,26 @@
         <form action="/student/pay-balance" method="POST">
           <label>Payment Amount</label>
           <input type="number" name="amount" min="0" step="50" value="<%= balanceDue %>" required>
+          <label>Reference / Payment Note</label>
+          <input type="text" name="reference" placeholder="Bank transfer / mobile wallet reference" required>
           <p class="hint">Current outstanding balance: $<%= Number(balanceDue).toLocaleString() %></p>
-          <button type="submit">Submit Payment</button>
+          <button type="submit">Submit Payment Request</button>
         </form>
+
+        <h3>Upload Payment Receipt</h3>
+        <form action="/student/upload-balance-payment-receipt" method="POST" enctype="multipart/form-data">
+          <label>Reference</label>
+          <input type="text" name="reference" placeholder="Same reference as above" required>
+          <label>Amount</label>
+          <input type="number" name="amount" step="50" min="0" value="<%= balanceDue %>" required>
+          <label>Receipt PDF</label>
+          <input type="file" name="balance_receipt" accept=".pdf" required>
+          <button type="submit">Upload Receipt</button>
+        </form>
+        <p><strong>Receipt Status:</strong> <%= student.balance_payment_status || 'not_required' %></p>
+        <% if (student.balance_payment_receipt_file) { %>
+          <p><a href="/uploads/<%= student.balance_payment_receipt_file %>" target="_blank">View uploaded balance receipt</a></p>
+        <% } %>
       </section>
     </div>
 

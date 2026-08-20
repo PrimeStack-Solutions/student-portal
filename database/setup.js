@@ -68,6 +68,10 @@ db.exec(`
     tuition_receipt_file TEXT DEFAULT '',
     tuition_receipt_status TEXT DEFAULT 'pending',
     tuition_rejection_reason TEXT DEFAULT '',
+    balance_payment_receipt_file TEXT DEFAULT '',
+    balance_payment_status TEXT DEFAULT 'not_required',
+    balance_payment_amount REAL DEFAULT 0,
+    balance_payment_reference TEXT DEFAULT '',
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
@@ -204,6 +208,10 @@ addColumnIfMissing('students', 'portal_access', "portal_access TEXT DEFAULT 'blo
 addColumnIfMissing('students', 'tuition_receipt_file', "tuition_receipt_file TEXT DEFAULT ''");
 addColumnIfMissing('students', 'tuition_receipt_status', "tuition_receipt_status TEXT DEFAULT 'pending'");
 addColumnIfMissing('students', 'tuition_rejection_reason', "tuition_rejection_reason TEXT DEFAULT ''");
+addColumnIfMissing('students', 'balance_payment_receipt_file', "balance_payment_receipt_file TEXT DEFAULT ''");
+addColumnIfMissing('students', 'balance_payment_status', "balance_payment_status TEXT DEFAULT 'not_required'");
+addColumnIfMissing('students', 'balance_payment_amount', "balance_payment_amount REAL DEFAULT 0");
+addColumnIfMissing('students', 'balance_payment_reference', "balance_payment_reference TEXT DEFAULT ''");
 
 addColumnIfMissing('courses', 'credits', "credits INTEGER DEFAULT 3");
 addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Fall'");
