@@ -169,6 +169,18 @@ router.get('/payments', authorize('student'), (req, res) => {
   });
 });
 
+router.get('/profile', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+
+  res.render('student/profile', {
+    user: userRow,
+    student,
+    error: null,
+    success: null
+  });
+});
+
 router.post('/register-semester', authorize('student'), (req, res) => {
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   const semester = req.body.semester || 'Semester 1';

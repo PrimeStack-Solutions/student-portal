@@ -59,6 +59,7 @@ db.exec(`
     student_number TEXT DEFAULT '',
     program TEXT DEFAULT 'General Studies',
     year_of_study INTEGER DEFAULT 1,
+    study_mode TEXT DEFAULT 'Full-time',
     phone TEXT DEFAULT '',
     address TEXT DEFAULT '',
     gpa REAL DEFAULT 0,
@@ -199,6 +200,7 @@ addColumnIfMissing('students', 'student_code', "student_code TEXT DEFAULT ''");
 addColumnIfMissing('students', 'student_number', "student_number TEXT DEFAULT ''");
 addColumnIfMissing('students', 'program', "program TEXT DEFAULT 'General Studies'");
 addColumnIfMissing('students', 'year_of_study', "year_of_study INTEGER DEFAULT 1");
+addColumnIfMissing('students', 'study_mode', "study_mode TEXT DEFAULT 'Full-time'");
 addColumnIfMissing('students', 'phone', "phone TEXT DEFAULT ''");
 addColumnIfMissing('students', 'address', "address TEXT DEFAULT ''");
 addColumnIfMissing('students', 'gpa', "gpa REAL DEFAULT 0");
@@ -226,8 +228,8 @@ const insertApplicant = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 const insertStudent = db.prepare(`
-  INSERT INTO students (user_id, student_code, student_number, program, year_of_study, phone, address, gpa, tuition_balance, status, portal_access, tuition_receipt_file, tuition_receipt_status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO students (user_id, student_code, student_number, program, year_of_study, study_mode, phone, address, gpa, tuition_balance, status, portal_access, tuition_receipt_file, tuition_receipt_status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 const insertNotification = db.prepare(`
   INSERT INTO notifications (user_id, title, message, delivery_mode) VALUES (?, ?, ?, ?)
@@ -282,12 +284,12 @@ if (!existingApplicant) {
 
 const existingStudentJohn = db.prepare('SELECT id FROM students WHERE user_id = ?').get(johnId);
 if (!existingStudentJohn) {
-  insertStudent.run(johnId, 'STU1001', 'STU-20260704-1001', 'Bachelor of Computer Engineering', 2, '+1 555-0101', '12 Elm Street', 3.7, 250, 'active', 'blocked', '', 'pending');
+  insertStudent.run(johnId, 'STU1001', 'STU-20260704-1001', 'Bachelor of Computer Engineering', 2, 'Full-time', '+1 555-0101', '12 Elm Street', 3.7, 250, 'active', 'blocked', '', 'pending');
 }
 
 const existingStudentJane = db.prepare('SELECT id FROM students WHERE user_id = ?').get(janeId);
 if (!existingStudentJane) {
-  insertStudent.run(janeId, 'STU1002', 'STU-20260704-1002', 'Bachelor of Business Administration', 1, '+1 555-0102', '14 Oak Avenue', 3.2, 0, 'active', 'granted', 'tuition-receipt.pdf', 'approved');
+  insertStudent.run(janeId, 'STU1002', 'STU-20260704-1002', 'Bachelor of Business Administration', 1, 'Part-time', '+1 555-0102', '14 Oak Avenue', 3.2, 0, 'active', 'granted', 'tuition-receipt.pdf', 'approved');
 }
 
 const existingAdmin = db.prepare('SELECT id FROM admins WHERE user_id = ?').get(aliceId);

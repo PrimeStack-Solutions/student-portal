@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/results">Results</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/student/payments">Payments</a>
+      <a href="/student/profile">Profile</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>My Profile</h1>
+
+    <section class="card">
+      <form action="/student/profile" method="POST">
+        <label>Full Name</label>
+        <input type="text" name="full_name" value="<%= user.full_name %>" required>
+
+        <label>Email</label>
+        <input type="email" name="email" value="<%= user.email %>" required>
+
+        <label>Phone</label>
+        <input type="text" name="phone" value="<%= student.phone %>" placeholder="Enter phone number">
+
+        <label>Address</label>
+        <input type="text" name="address" value="<%= student.address %>" placeholder="Enter address">
+
+        <label>Program</label>
+        <select name="program">
+          <optgroup label="School of Engineering">
+            <option value="Bachelor of Computer Engineering" <%= student.program === 'Bachelor of Computer Engineering' ? 'selected' : '' %>>Bachelor of Computer Engineering</option>
+            <option value="Bachelor of Electrical Engineering" <%= student.program === 'Bachelor of Electrical Engineering' ? 'selected' : '' %>>Bachelor of Electrical Engineering</option>
+            <option value="Bachelor of Mechanical Engineering" <%= student.program === 'Bachelor of Mechanical Engineering' ? 'selected' : '' %>>Bachelor of Mechanical Engineering</option>
+          </optgroup>
+          <optgroup label="School of Law">
+            <option value="Bachelor of Commercial Law" <%= student.program === 'Bachelor of Commercial Law' ? 'selected' : '' %>>Bachelor of Commercial Law</option>
+            <option value="Bachelor of International Law" <%= student.program === 'Bachelor of International Law' ? 'selected' : '' %>>Bachelor of International Law</option>
+            <option value="Bachelor of Human Rights Law" <%= student.program === 'Bachelor of Human Rights Law' ? 'selected' : '' %>>Bachelor of Human Rights Law</option>
+          </optgroup>
+          <optgroup label="School of Humanities">
+            <option value="Bachelor of English Literature" <%= student.program === 'Bachelor of English Literature' ? 'selected' : '' %>>Bachelor of English Literature</option>
+            <option value="Bachelor of History and International Studies" <%= student.program === 'Bachelor of History and International Studies' ? 'selected' : '' %>>Bachelor of History and International Studies</option>
+            <option value="Bachelor of Communication Studies" <%= student.program === 'Bachelor of Communication Studies' ? 'selected' : '' %>>Bachelor of Communication Studies</option>
+          </optgroup>
+          <optgroup label="School of Business">
+            <option value="Bachelor of Accounting" <%= student.program === 'Bachelor of Accounting' ? 'selected' : '' %>>Bachelor of Accounting</option>
+            <option value="Bachelor of Marketing" <%= student.program === 'Bachelor of Marketing' ? 'selected' : '' %>>Bachelor of Marketing</option>
+            <option value="Bachelor of Business Administration" <%= student.program === 'Bachelor of Business Administration' ? 'selected' : '' %>>Bachelor of Business Administration</option>
+          </optgroup>
+          <optgroup label="School of Natural Sciences">
+            <option value="Bachelor of Biology" <%= student.program === 'Bachelor of Biology' ? 'selected' : '' %>>Bachelor of Biology</option>
+            <option value="Bachelor of Chemistry" <%= student.program === 'Bachelor of Chemistry' ? 'selected' : '' %>>Bachelor of Chemistry</option>
+            <option value="Bachelor of Physics" <%= student.program === 'Bachelor of Physics' ? 'selected' : '' %>>Bachelor of Physics</option>
+          </optgroup>
+          <optgroup label="School of Public Health">
+            <option value="Bachelor of Public Health" <%= student.program === 'Bachelor of Public Health' ? 'selected' : '' %>>Bachelor of Public Health</option>
+            <option value="Bachelor of Epidemiology" <%= student.program === 'Bachelor of Epidemiology' ? 'selected' : '' %>>Bachelor of Epidemiology</option>
+          </optgroup>
+          <optgroup label="School of Medicine and Surgery">
+            <option value="Bachelor of Medicine and Surgery" <%= student.program === 'Bachelor of Medicine and Surgery' ? 'selected' : '' %>>Bachelor of Medicine and Surgery</option>
+            <option value="Bachelor of Nursing" <%= student.program === 'Bachelor of Nursing' ? 'selected' : '' %>>Bachelor of Nursing</option>
+          </optgroup>
+        </select>
+
+        <label>Year of Study</label>
+        <input type="number" name="year_of_study" value="<%= student.year_of_study %>" min="1" max="12">
+
+        <label>Mode of Study</label>
+        <input type="text" value="<%= student.study_mode || 'Full-time' %>" readonly disabled>
+        <small>Mode of study is managed by the registrar and cannot be changed here.</small>
+
+        <button type="submit">Save Changes</button>
+      </form>
+    </section>
+  </div>
+</body>
+</html>
