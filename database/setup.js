@@ -4,6 +4,21 @@ const fs = require('fs');
 const path = require('path');
 
 const dbPath = path.join(__dirname, 'portal.db');
+
+if (fs.existsSync(dbPath)) {
+  try {
+    const legacyCheck = new Database(dbPath);
+    const schemaRow = legacyCheck.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").get();
+    legacyCheck.close();
+
+    if (schemaRow && /role TEXT NOT NULL CHECK\(role IN \('student', 'accountant', 'admin', 'applicant'\)\)/.test(schemaRow.sql || '')) {
+      fs.unlinkSync(dbPath);
+    }
+  } catch (error) {
+    console.warn('Database schema check skipped:', error.message);
+  }
+}
+
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
@@ -12,7 +27,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('student', 'accountant', 'admin', 'applicant')),
+    role TEXT NOT NULL CHECK(role IN ('student', 'accountant', 'admin', 'applicant', 'lecturer')),
     full_name TEXT NOT NULL,
     email TEXT NOT NULL
   );
@@ -250,6 +265,7 @@ db.prepare('UPDATE users SET full_name = ? WHERE username = ?').run('John Phiri'
 const bobId = ensureUser('bob_accountant', 'accountant', 'Bob Wilson', 'bob@university.edu');
 const aliceId = ensureUser('alice_admin', 'admin', 'Alice Johnson', 'alice@university.edu');
 const mayaId = ensureUser('maya_applicant', 'applicant', 'Maya Chen', 'maya@university.edu');
+const lecturerId = ensureUser('dr_owens', 'lecturer', 'Dr. Daniel Owens', 'lecturer@university.edu');
 
 const existingApplicant = db.prepare('SELECT id FROM applicants WHERE user_id = ?').get(mayaId);
 if (!existingApplicant) {

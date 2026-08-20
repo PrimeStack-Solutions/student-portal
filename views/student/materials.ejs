@@ -21,25 +21,27 @@
   <div class="container">
     <h1>Material Dashboard</h1>
 
-    <section class="card">
-      <h2>Upload Materials</h2>
-      <form action="/student/upload-material" method="POST" enctype="multipart/form-data">
-        <label>Title</label>
-        <input type="text" name="title" placeholder="Lecture notes" required>
-        <label>Description</label>
-        <textarea name="description" placeholder="Brief summary of the material"></textarea>
-        <label>Category</label>
-        <select name="category">
-          <option value="General">General</option>
-          <option value="Core Course">Core Course</option>
-          <option value="Program Guide">Program Guide</option>
-          <option value="Academic Support">Academic Support</option>
-        </select>
-        <label>PDF File</label>
-        <input type="file" name="material" accept=".pdf" required>
-        <button type="submit">Upload Material</button>
-      </form>
-    </section>
+    <% if (canUploadMaterial) { %>
+      <section class="card">
+        <h2>Upload Materials</h2>
+        <form action="/student/upload-material" method="POST" enctype="multipart/form-data">
+          <label>Title</label>
+          <input type="text" name="title" placeholder="Lecture notes" required>
+          <label>Description</label>
+          <textarea name="description" placeholder="Brief summary of the material"></textarea>
+          <label>Category</label>
+          <select name="category">
+            <option value="General">General</option>
+            <option value="Core Course">Core Course</option>
+            <option value="Program Guide">Program Guide</option>
+            <option value="Academic Support">Academic Support</option>
+          </select>
+          <label>PDF File</label>
+          <input type="file" name="material" accept=".pdf" required>
+          <button type="submit">Upload Material</button>
+        </form>
+      </section>
+    <% } %>
 
     <section class="card">
       <h2>Available School Materials</h2>

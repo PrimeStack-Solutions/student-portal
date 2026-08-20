@@ -14,6 +14,7 @@
       <a href="/student/announcements">Announcements</a>
       <a href="/student/results">Results</a>
       <a href="/student/materials">Materials</a>
+      <a href="/student/payments">Payments</a>
       <a href="/logout">Logout</a>
     </div>
   </nav>
@@ -38,12 +39,30 @@
       </div>
     </div>
 
-    <div class="dashboard-grid">
-      <section class="card">
+    <div class="widget-row">
+      <div class="widget">
+        <h3>Academic status</h3>
         <p><strong>Program:</strong> <%= student.program %></p>
         <p><strong>Year:</strong> <%= student.year_of_study %></p>
         <p><strong>GPA:</strong> <%= student.gpa %></p>
+      </div>
+      <div class="widget">
+        <h3>Performance</h3>
+        <div class="chart-bars">
+          <% const gradeBands = [75, 82, 91, 68, 88, 97]; gradeBands.forEach((value, index) => { %>
+            <div class="bar" style="height: <%= value %>%"><span><%= ['F','S','A','B','A','A+'][index] %></span></div>
+          <% }); %>
+        </div>
+      </div>
+      <div class="widget">
+        <h3>Financial overview</h3>
         <p><strong>Outstanding Balance:</strong> KSh <%= (student.tuition_balance * 1600).toLocaleString() %> / $<%= Number(student.tuition_balance).toLocaleString() %></p>
+        <p><strong>Payment Status:</strong> <%= payments.length ? payments[0].status : 'No payment record' %></p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="card">
         <h2>Update Profile</h2>
       <form action="/student/profile" method="POST">
         <label>Full Name</label>

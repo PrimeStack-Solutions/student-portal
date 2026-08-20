@@ -95,13 +95,25 @@ router.get('/announcements', authorize('student'), (req, res) => {
 router.get('/results', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
-  const results = db.prepare(`
+  const selectedSemester = req.query.semester || 'all';
+
+  let query = `
     SELECT g.semester, c.code, c.name, g.grade, g.gpa
     FROM grades g
     JOIN courses c ON c.id = g.course_id
     WHERE g.student_id = ?
-    ORDER BY g.semester, c.code
-  `).all(student.id);
+  `;
+  const params = [student.id];
+
+  if (selectedSemester !== 'all') {
+    query += ' AND g.semester = ?';
+    params.push(selectedSemester);
+  }
+
+  query += ' ORDER BY g.semester, c.code';
+
+  const results = db.prepare(query).all(...params);
+  const semesters = [...new Set(results.map(item => item.semester).filter(Boolean))].sort();
 
   const groupedResults = results.reduce((acc, result) => {
     const semester = result.semester || 'Unspecified';
@@ -115,7 +127,8 @@ router.get('/results', authorize('student'), (req, res) => {
     student,
     groupedResults,
     results,
-    semesters: Object.keys(groupedResults)
+    semesters,
+    selectedSemester
   });
 });
 
@@ -132,8 +145,60 @@ router.get('/materials', authorize('student'), (req, res) => {
   res.render('student/materials', {
     user: userRow,
     student,
-    materials
+    materials,
+    canUploadMaterial: ['lecturer', 'admin'].includes(userRow.role)
   });
+});
+
+router.get('/payments', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const payments = db.prepare('SELECT * FROM payments WHERE student_id = ? ORDER BY id DESC').all(student.id);
+  const totalPaid = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const balanceDue = Math.max(0, Number(student.tuition_balance || 0));
+  const semesterFee = 250;
+
+  res.render('student/payments', {
+    user: userRow,
+    student,
+    payments,
+    totalPaid,
+    balanceDue,
+    semesterFee
+  });
+});
+
+router.post('/register-semester', authorize('student'), (req, res) => {
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const semester = req.body.semester || 'Semester 1';
+  const amount = Number(req.body.amount || 250);
+
+  db.prepare('INSERT INTO payments (student_id, amount, payment_date, status, purpose) VALUES (?, ?, ?, ?, ?)')
+    .run(student.id, amount, new Date().toISOString(), 'completed', `Semester registration - ${semester}`);
+
+  const updatedBalance = Math.max(0, Number(student.tuition_balance || 0) - amount);
+  db.prepare('UPDATE students SET tuition_balance = ? WHERE id = ?').run(updatedBalance, student.id);
+
+  res.redirect('/student/payments');
+});
+
+router.post('/pay-balance', authorize('student'), (req, res) => {
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const amount = Number(req.body.amount || 0);
+
+  if (!amount || amount <= 0) {
+    return res.redirect('/student/payments');
+  }
+
+  const availableBalance = Number(student.tuition_balance || 0);
+  const actualPayment = Math.min(amount, availableBalance);
+  db.prepare('INSERT INTO payments (student_id, amount, payment_date, status, purpose) VALUES (?, ?, ?, ?, ?)')
+    .run(student.id, actualPayment, new Date().toISOString(), 'completed', 'Balance payment');
+
+  db.prepare('UPDATE students SET tuition_balance = ? WHERE id = ?')
+    .run(Math.max(0, availableBalance - actualPayment), student.id);
+
+  res.redirect('/student/payments');
 });
 
 router.get('/blocked', authorize('student'), (req, res) => {
@@ -198,11 +263,15 @@ router.post('/upload-document', authorize('student'), upload.single('doc'), (req
 });
 
 router.post('/upload-material', authorize('student'), materialUpload.single('material'), (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  if (!['lecturer', 'admin'].includes(user.role)) {
+    return res.status(403).render('forbidden', { user });
+  }
+
   if (!req.file) {
     return res.redirect('/student/materials');
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   db.prepare('INSERT INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(req.body.title || 'Study material', req.body.description || 'Shared learning resource', req.file.filename, req.file.mimetype, user.id, user.full_name, req.body.category || 'General');
   res.redirect('/student/materials');

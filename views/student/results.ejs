@@ -20,6 +20,21 @@
 
   <div class="container">
     <h1>Results Dashboard</h1>
+    <section class="card">
+      <form method="GET" action="/student/results" style="display:flex; flex-direction:row; align-items:end; gap:12px; flex-wrap:wrap;">
+        <div>
+          <label for="semester">Filter by semester</label>
+          <select id="semester" name="semester">
+            <option value="all" <%= selectedSemester === 'all' ? 'selected' : '' %>>All semesters</option>
+            <% semesters.forEach(semester => { %>
+              <option value="<%= semester %>" <%= selectedSemester === semester ? 'selected' : '' %>><%= semester %></option>
+            <% }); %>
+          </select>
+        </div>
+        <button type="submit">Apply</button>
+      </form>
+    </section>
+
     <% if (!results.length) { %>
       <section class="card">
         <p>No results have been published for you yet.</p>

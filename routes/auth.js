@@ -96,6 +96,7 @@ router.get('/dashboard', (req, res) => {
   }
   if (role === 'accountant') return res.redirect('/accountant/dashboard');
   if (role === 'admin') return res.redirect('/admin/dashboard');
+  if (role === 'lecturer') return res.redirect('/lecturer/dashboard');
   if (role === 'applicant') return res.redirect('/applicant/dashboard');
 
   res.redirect('/login');

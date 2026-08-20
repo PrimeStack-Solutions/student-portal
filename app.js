@@ -6,6 +6,7 @@ const fs = require('fs');
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
 const adminRoutes = require('./routes/admin');
+const lecturerRoutes = require('./routes/lecturer');
 const accountantRoutes = require('./routes/accountant');
 const applicantRoutes = require('./routes/applicant');
 const db = require('./database/setup');
@@ -30,6 +31,7 @@ app.use(session({
 app.use('/', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/admin', adminRoutes);
+app.use('/lecturer', lecturerRoutes);
 app.use('/accountant', accountantRoutes);
 app.use('/applicant', applicantRoutes);
 

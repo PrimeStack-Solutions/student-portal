@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecturer Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Lecturer)</span>
+    <div class="nav-links">
+      <a href="/lecturer/dashboard">Home</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Lecturer Dashboard</h1>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="label">Materials</span>
+        <span class="value"><%= materials.length %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Announcements</span>
+        <span class="value"><%= announcements.length %></span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="card">
+        <h2>Publish Announcement</h2>
+        <form action="/lecturer/publish-announcement" method="POST">
+          <input type="text" name="title" placeholder="Announcement title" required>
+          <textarea name="body" placeholder="Message" required></textarea>
+          <button type="submit">Publish</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Upload PDF Material</h2>
+        <form action="/lecturer/upload-material" method="POST" enctype="multipart/form-data">
+          <input type="text" name="title" placeholder="Material title" required>
+          <textarea name="description" placeholder="Short description"></textarea>
+          <select name="category">
+            <option value="General">General</option>
+            <option value="Core Course">Core Course</option>
+            <option value="Program Guide">Program Guide</option>
+            <option value="Academic Support">Academic Support</option>
+          </select>
+          <input type="file" name="material" accept=".pdf" required>
+          <button type="submit">Upload</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Uploaded Materials</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Uploaded By</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% materials.forEach(item => { %>
+            <tr>
+              <td><%= item.title %></td>
+              <td><%= item.category %></td>
+              <td><%= item.uploaded_by_name || 'Lecturer' %></td>
+              <td><a href="/uploads/<%= item.file_name %>" target="_blank">Open</a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

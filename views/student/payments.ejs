@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/results">Results</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/student/payments">Payments</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Payment Dashboard</h1>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="label">Total paid</span>
+        <span class="value">$<%= Number(totalPaid).toLocaleString() %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Balance due</span>
+        <span class="value">$<%= Number(balanceDue).toLocaleString() %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Semester fee</span>
+        <span class="value">$<%= Number(semesterFee).toLocaleString() %></span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="card">
+        <h2>Register for Semester</h2>
+        <form action="/student/register-semester" method="POST">
+          <label>Semester</label>
+          <select name="semester">
+            <option value="Semester 1">Semester 1</option>
+            <option value="Semester 2">Semester 2</option>
+            <option value="Semester 3">Semester 3</option>
+            <option value="Semester 4">Semester 4</option>
+            <option value="Semester 5">Semester 5</option>
+            <option value="Semester 6">Semester 6</option>
+            <option value="Semester 7">Semester 7</option>
+            <option value="Semester 8">Semester 8</option>
+          </select>
+          <label>Amount</label>
+          <input type="number" name="amount" value="250" min="0" step="50">
+          <button type="submit">Register & Pay</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Pay Outstanding Balance</h2>
+        <form action="/student/pay-balance" method="POST">
+          <label>Payment Amount</label>
+          <input type="number" name="amount" min="0" step="50" value="<%= balanceDue %>" required>
+          <p class="hint">Current outstanding balance: $<%= Number(balanceDue).toLocaleString() %></p>
+          <button type="submit">Submit Payment</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Payment History</h2>
+      <% if (!payments.length) { %>
+        <p>No payment records yet.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Purpose</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% payments.forEach(payment => { %>
+              <tr>
+                <td><%= payment.payment_date %></td>
+                <td><%= payment.purpose %></td>
+                <td>$<%= Number(payment.amount).toLocaleString() %></td>
+                <td><%= payment.status %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>
