@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 const db = require('../database/setup');
 const { authorize } = require('../middleware/auth');
 
@@ -177,7 +178,57 @@ router.get('/profile', authorize('student'), (req, res) => {
     user: userRow,
     student,
     error: null,
-    success: null
+    success: null,
+    avatarInitials: (userRow.full_name || 'S').split(' ').slice(0, 2).map(name => name.charAt(0)).join('').toUpperCase()
+  });
+});
+
+router.post('/change-password', authorize('student'), (req, res) => {
+  const { current_password, new_password, confirm_password } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+
+  if (!user || !bcrypt.compareSync(current_password, user.password_hash)) {
+    const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+    return res.render('student/profile', {
+      user,
+      student,
+      error: 'Current password is incorrect.',
+      success: null,
+      avatarInitials: (user.full_name || 'S').split(' ').slice(0, 2).map(name => name.charAt(0)).join('').toUpperCase()
+    });
+  }
+
+  if (!new_password || new_password.length < 6) {
+    const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+    return res.render('student/profile', {
+      user,
+      student,
+      error: 'New password must be at least 6 characters long.',
+      success: null,
+      avatarInitials: (user.full_name || 'S').split(' ').slice(0, 2).map(name => name.charAt(0)).join('').toUpperCase()
+    });
+  }
+
+  if (new_password !== confirm_password) {
+    const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+    return res.render('student/profile', {
+      user,
+      student,
+      error: 'New password and confirmation do not match.',
+      success: null,
+      avatarInitials: (user.full_name || 'S').split(' ').slice(0, 2).map(name => name.charAt(0)).join('').toUpperCase()
+    });
+  }
+
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(new_password, 10), user.id);
+
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  res.render('student/profile', {
+    user: { ...user, full_name: user.full_name, email: user.email },
+    student,
+    error: null,
+    success: 'Password changed successfully.',
+    avatarInitials: (user.full_name || 'S').split(' ').slice(0, 2).map(name => name.charAt(0)).join('').toUpperCase()
   });
 });
 
