@@ -64,6 +64,36 @@ nav a {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 20px 0 30px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 8px 18px rgba(15, 76, 129, 0.08);
+}
+
+.stat-card .label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f4c81;
+}
+
 .card {
   background: #f8fbff;
   border: 1px solid #dbeafe;

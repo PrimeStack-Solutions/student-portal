@@ -51,6 +51,7 @@ router.get('/dashboard', authorize('student'), (req, res) => {
   const courses = db.prepare('SELECT * FROM courses ORDER BY code').all();
   const payments = db.prepare('SELECT * FROM payments WHERE student_id = ? ORDER BY id DESC').all(student.id);
   const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC LIMIT 5').all();
+  const materials = db.prepare('SELECT * FROM materials ORDER BY id DESC LIMIT 5').all();
   const documents = db.prepare('SELECT * FROM documents WHERE user_id = ? ORDER BY id DESC').all(req.session.user.id);
   const results = db.prepare(`
     SELECT g.semester, c.code, c.name, g.grade, g.gpa
@@ -59,6 +60,9 @@ router.get('/dashboard', authorize('student'), (req, res) => {
     WHERE g.student_id = ?
     ORDER BY g.semester, c.code
   `).all(student.id);
+  const totalAnnouncements = db.prepare('SELECT COUNT(*) AS total FROM announcements').get().total;
+  const totalResults = db.prepare('SELECT COUNT(*) AS total FROM grades WHERE student_id = ?').get(student.id).total;
+  const totalMaterials = db.prepare('SELECT COUNT(*) AS total FROM materials').get().total;
 
   res.render('student/dashboard', {
     user: userRow,
@@ -67,8 +71,15 @@ router.get('/dashboard', authorize('student'), (req, res) => {
     courses,
     payments,
     announcements,
+    materials,
     documents,
     results,
+    stats: {
+      announcements: totalAnnouncements,
+      results: totalResults,
+      materials: totalMaterials,
+      balance: Number(student.tuition_balance || 0)
+    },
     error: null,
     success: null
   });
