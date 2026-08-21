@@ -25,15 +25,15 @@
     <div class="stats-grid">
       <div class="stat-card">
         <span class="label">Total paid</span>
-        <span class="value">$<%= Number(totalPaid).toLocaleString() %></span>
+        <span class="value">ZMW <%= Number(totalPaid).toLocaleString() %> / $<%= Number(totalPaid).toLocaleString() %></span>
       </div>
       <div class="stat-card">
         <span class="label">Balance due</span>
-        <span class="value">$<%= Number(balanceDue).toLocaleString() %></span>
+        <span class="value">ZMW <%= Number(balanceDue).toLocaleString() %> / $<%= Number(balanceDue).toLocaleString() %></span>
       </div>
       <div class="stat-card">
         <span class="label">Semester fee</span>
-        <span class="value">$<%= Number(semesterFee).toLocaleString() %></span>
+        <span class="value">ZMW <%= Number(semesterFee).toLocaleString() %> / $<%= Number(semesterFee).toLocaleString() %></span>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
           <input type="number" name="amount" min="0" step="50" value="<%= balanceDue %>" required>
           <label>Reference / Payment Note</label>
           <input type="text" name="reference" placeholder="Bank transfer / mobile wallet reference" required>
-          <p class="hint">Current outstanding balance: $<%= Number(balanceDue).toLocaleString() %></p>
+          <p class="hint">Current outstanding balance: ZMW <%= Number(balanceDue).toLocaleString() %> / $<%= Number(balanceDue).toLocaleString() %></p>
           <button type="submit">Submit Payment Request</button>
         </form>
 
@@ -105,7 +105,7 @@
               <tr>
                 <td><%= payment.payment_date %></td>
                 <td><%= payment.purpose %></td>
-                <td>$<%= Number(payment.amount).toLocaleString() %></td>
+                <td>ZMW <%= Number(payment.amount).toLocaleString() %> / $<%= Number(payment.amount).toLocaleString() %></td>
                 <td><%= payment.status %></td>
               </tr>
             <% }); %>

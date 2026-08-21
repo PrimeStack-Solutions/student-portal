@@ -22,7 +22,7 @@
             <tr>
               <td><%= student.full_name %></td>
               <td><%= student.email %></td>
-              <td>$<%= student.tuition_balance %></td>
+              <td>ZMW <%= student.tuition_balance %> / $<%= student.tuition_balance %></td>
               <td>
                 <% if (student.tuition_receipt_file) { %>
                   <a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View</a>
@@ -33,7 +33,7 @@
               <td>
                 <% if (student.balance_payment_receipt_file) { %>
                   <a href="/uploads/<%= student.balance_payment_receipt_file %>" target="_blank">View</a><br>
-                  <small>Ref: <%= student.balance_payment_reference %><br>Amt: $<%= student.balance_payment_amount %><br>Status: <%= student.balance_payment_status %></small>
+                  <small>Ref: <%= student.balance_payment_reference %><br>Amt: ZMW <%= student.balance_payment_amount %> / $<%= student.balance_payment_amount %><br>Status: <%= student.balance_payment_status %></small>
                   <% if (student.balance_payment_status === 'pending') { %>
                     <form action="/accountant/approve-balance-payment" method="POST" style="margin-top: 8px;">
                       <input type="hidden" name="student_id" value="<%= student.id %>">
@@ -76,7 +76,7 @@
     <section class="card">
       <h2>Payment Summary</h2>
       <ul>
-        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — <%= payment.purpose %>: $<%= payment.amount %> (<%= payment.status %>)</li><% }); %>
+        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — <%= payment.purpose %>: ZMW <%= payment.amount %> / $<%= payment.amount %> (<%= payment.status %>)</li><% }); %>
       </ul>
     </section>
   </div>
