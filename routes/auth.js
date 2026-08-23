@@ -16,7 +16,7 @@ router.post('/login', (req, res) => {
   let user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
 
   if (!user) {
-    const student = db.prepare('SELECT u.* FROM students s JOIN users u ON u.id = s.user_id WHERE s.student_number IS NOT NULL AND TRIM(s.student_number) != "" AND s.student_number = ?').get(username);
+    const student = db.prepare("SELECT u.* FROM students s JOIN users u ON u.id = s.user_id WHERE s.student_number IS NOT NULL AND TRIM(COALESCE(s.student_number, '')) != '' AND s.student_number = ?").get(username);
     if (student) {
       user = student;
     }
