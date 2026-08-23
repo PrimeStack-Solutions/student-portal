@@ -301,14 +301,16 @@ router.post('/register-course', authorize('student'), (req, res) => {
 });
 
 router.post('/upload-tuition-receipt', authorize('student'), receiptUpload.single('receipt'), (req, res) => {
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const redirectPath = student && student.portal_access === 'blocked' ? '/student/blocked' : '/student/dashboard';
+
   if (!req.file) {
-    return res.redirect('/student/dashboard');
+    return res.redirect(redirectPath);
   }
 
-  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   db.prepare('UPDATE students SET tuition_receipt_file = ?, tuition_receipt_status = ? WHERE id = ?')
     .run(req.file.filename, 'pending', student.id);
-  res.redirect('/student/dashboard');
+  res.redirect(redirectPath);
 });
 
 router.post('/upload-assignment', authorize('student'), assignmentUpload.single('assignment'), (req, res) => {

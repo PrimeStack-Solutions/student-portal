@@ -17,6 +17,22 @@
       <p>Your account is restricted. Please upload your tuition fee receipt for review before the accounts office approves access.</p>
       <p>Once approved, you will be able to view your courses and results.</p>
     </div>
+    <section class="card">
+      <h2>Upload Tuition Receipt</h2>
+      <form action="/student/upload-tuition-receipt" method="POST" enctype="multipart/form-data">
+        <label>Receipt File</label>
+        <input type="file" name="receipt" accept=".pdf" required>
+        <p class="hint">Only PDF receipts are accepted for tuition verification.</p>
+        <button type="submit">Upload Receipt</button>
+      </form>
+      <p><strong>Receipt Status:</strong> <%= student.tuition_receipt_status %></p>
+      <% if (student.tuition_rejection_reason) { %>
+        <p><strong>Rejection Reason:</strong> <%= student.tuition_rejection_reason %></p>
+      <% } %>
+      <% if (student.tuition_receipt_file) { %>
+        <p><a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View uploaded receipt</a></p>
+      <% } %>
+    </section>
   </div>
 </body>
 </html>
