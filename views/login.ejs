@@ -15,7 +15,10 @@
       <label for="username">Username or Student Number</label>
       <input type="text" id="username" name="username" required>
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" required>
+      <div class="password-field">
+        <input type="password" id="password" name="password" required>
+        <button type="button" class="password-toggle" aria-controls="password" aria-label="Show password">Show</button>
+      </div>
       <button type="submit">Login</button>
     </form>
     <div class="card" style="margin-top:16px;">
@@ -31,5 +34,16 @@
       <a href="/reset-password">Forgot password?</a>
     </div>
   </div>
+  <script>
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.querySelector('.password-toggle');
+
+    passwordToggle.addEventListener('click', () => {
+      const isVisible = passwordInput.type === 'text';
+      passwordInput.type = isVisible ? 'password' : 'text';
+      passwordToggle.textContent = isVisible ? 'Show' : 'Hide';
+      passwordToggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+    });
+  </script>
 </body>
 </html>

@@ -154,6 +154,19 @@ input, textarea, select, button {
   border-radius: 8px;
   font-size: 14px;
 }
+.password-field { position: relative; }
+.password-field input { width: 100%; padding-right: 68px; }
+.password-toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  padding: 0 12px;
+  background: transparent;
+  color: #0f4c81;
+  font-size: 13px;
+}
+.password-toggle:hover { background: #eaf4ff; }
 textarea { min-height: 80px; resize: vertical; }
 button {
   background: #0f4c81;
