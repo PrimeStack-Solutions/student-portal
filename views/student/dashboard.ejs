@@ -36,7 +36,7 @@
       </div>
       <div class="stat-card">
         <span class="label">Balance</span>
-        <span class="value">ZMW <%= Number(stats.balance).toLocaleString() %> / $<%= Number(stats.balance).toLocaleString() %></span>
+        <span class="value">ZMW <%= Number(stats.balance).toLocaleString() %></span>
       </div>
     </div>
 
@@ -57,7 +57,7 @@
       </div>
       <div class="widget">
         <h3>Financial overview</h3>
-        <p><strong>Outstanding Balance:</strong> ZMW <%= Number(student.tuition_balance).toLocaleString() %> / $<%= Number(student.tuition_balance).toLocaleString() %></p>
+        <p><strong>Outstanding Balance:</strong> ZMW <%= Number(student.tuition_balance).toLocaleString() %></p>
         <p><strong>Payment Status:</strong> <%= payments.length ? payments[0].status : 'No payment record' %></p>
       </div>
     </div>
@@ -151,7 +151,7 @@
       <h2>Payments & Announcements</h2>
       <h3>Recent payments</h3>
       <ul>
-        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — ZMW <%= payment.amount %> / $<%= payment.amount %> (<%= payment.status %>)</li><% }); %>
+        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — ZMW <%= payment.amount %> (<%= payment.status %>)</li><% }); %>
       </ul>
       <h3>Latest announcements</h3>
       <ul>
