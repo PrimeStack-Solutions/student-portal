@@ -110,7 +110,12 @@ router.post('/create-course', authorize('admin'), (req, res) => {
 });
 
 router.post('/publish-announcement', authorize('admin'), (req, res) => {
-  const { title, body } = req.body;
+  const title = (req.body.title || '').trim();
+  const body = (req.body.body || '').trim();
+  if (!title || !body) {
+    return res.redirect('/admin/dashboard');
+  }
+
   db.prepare('INSERT INTO announcements (title, body) VALUES (?, ?)').run(title, body);
   res.redirect('/admin/dashboard');
 });
