@@ -346,7 +346,7 @@ router.post('/register-course', authorize('student'), (req, res) => {
   const { course_id, semester } = req.body;
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   db.prepare('INSERT INTO enrollments (student_id, course_id, semester, status) VALUES (?, ?, ?, ?)')
-    .run(student.id, course_id, semester, 'pending');
+    .run(student.id, course_id, semester, 'approved');
   res.redirect('/student/dashboard');
 });
 
