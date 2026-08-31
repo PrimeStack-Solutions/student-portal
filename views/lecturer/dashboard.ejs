@@ -80,6 +80,23 @@
         <input type="text" name="semester" placeholder="Semester (for example Fall)" required>
         <button type="submit">Save CA Mark</button>
       </form>
+      <h3>Special Case: Exclude Student</h3>
+      <form action="/lecturer/mark-excluded" method="POST">
+        <select name="student_id" required>
+          <option value="">Select student</option>
+          <% students.forEach(student => { %>
+            <option value="<%= student.id %>"><%= student.full_name %> (<%= student.student_number %>)</option>
+          <% }); %>
+        </select>
+        <select name="course_id" required>
+          <option value="">Select course</option>
+          <% courses.forEach(course => { %>
+            <option value="<%= course.id %>"><%= course.code %> - <%= course.name %></option>
+          <% }); %>
+        </select>
+        <input type="text" name="semester" placeholder="Semester (for example Fall)" required>
+        <button type="submit">Record E</button>
+      </form>
     </section>
 
     <section class="card">

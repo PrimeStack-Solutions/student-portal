@@ -42,7 +42,22 @@ router.get('/dashboard', authorize('examination'), (req, res) => {
 });
 
 router.post('/upload-result', authorize('examination'), (req, res) => {
-  const { student_id, course_id, final_exam_score, semester } = req.body;
+  const { student_id, course_id, final_exam_score, semester, special_case_e } = req.body;
+  if (special_case_e === 'on') {
+    if (!student_id || !course_id || !semester) {
+      return res.redirect('/examination/dashboard');
+    }
+    const existingSpecialResult = db.prepare('SELECT id FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
+      .get(student_id, course_id, semester);
+    if (existingSpecialResult) {
+      db.prepare('UPDATE grades SET grade = ?, final_exam_score = NULL WHERE id = ?')
+        .run('E', existingSpecialResult.id);
+    } else {
+      db.prepare('INSERT INTO grades (student_id, course_id, grade, final_exam_score, semester) VALUES (?, ?, ?, NULL, ?)')
+        .run(student_id, course_id, 'E', semester);
+    }
+    return res.redirect('/examination/dashboard');
+  }
   const examScore = Number(final_exam_score);
   if (!student_id || !course_id || !semester || !Number.isFinite(examScore) || examScore < 0 || examScore > 60) {
     return res.redirect('/examination/dashboard');

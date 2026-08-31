@@ -89,6 +89,23 @@ router.post('/upload-ca', authorize('lecturer'), (req, res) => {
   res.redirect('/lecturer/dashboard');
 });
 
+router.post('/mark-excluded', authorize('lecturer'), (req, res) => {
+  const { student_id, course_id, semester } = req.body;
+  if (!student_id || !course_id || !semester) {
+    return res.redirect('/lecturer/dashboard');
+  }
+
+  const existing = db.prepare('SELECT id FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
+    .get(student_id, course_id, semester);
+  if (existing) {
+    db.prepare('UPDATE grades SET grade = ?, final_exam_score = NULL WHERE id = ?').run('E', existing.id);
+  } else {
+    db.prepare('INSERT INTO grades (student_id, course_id, grade, final_exam_score, semester) VALUES (?, ?, ?, NULL, ?)')
+      .run(student_id, course_id, 'E', semester);
+  }
+  res.redirect('/lecturer/dashboard');
+});
+
 router.post('/publish-announcement', authorize('lecturer'), (req, res) => {
   const { title, body } = req.body;
   db.prepare('INSERT INTO announcements (title, body) VALUES (?, ?)').run(title, body);
