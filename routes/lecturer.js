@@ -25,11 +25,33 @@ router.get('/dashboard', authorize('lecturer'), (req, res) => {
     ORDER BY m.id DESC
   `).all();
   const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC LIMIT 5').all();
+  const students = db.prepare(`
+    SELECT s.id, s.student_number, u.full_name
+    FROM students s
+    JOIN users u ON u.id = s.user_id
+    ORDER BY u.full_name
+  `).all();
+  const courses = db.prepare('SELECT id, code, name FROM courses ORDER BY code').all();
+  const assessments = db.prepare(`
+    SELECT ca.student_id, ca.course_id, ca.semester,
+      MAX(CASE WHEN ca.assessment_type = 'assignment' THEN ca.score END) AS assignment_score,
+      MAX(CASE WHEN ca.assessment_type = 'quiz' THEN ca.score END) AS quiz_score,
+      c.code, c.name, u.full_name AS student_name, s.student_number
+    FROM continuous_assessments ca
+    JOIN students s ON s.id = ca.student_id
+    JOIN users u ON u.id = s.user_id
+    JOIN courses c ON c.id = ca.course_id
+    GROUP BY ca.student_id, ca.course_id, ca.semester
+    ORDER BY ca.id DESC
+  `).all();
 
   res.render('lecturer/dashboard', {
     user,
     materials,
-    announcements
+    announcements,
+    students,
+    courses,
+    assessments
   });
 });
 
@@ -41,6 +63,23 @@ router.post('/upload-material', authorize('lecturer'), upload.single('material')
   db.prepare('INSERT INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(req.body.title || 'Lecture material', req.body.description || 'Course handout', req.file.filename, req.file.mimetype, req.session.user.id, req.session.user.full_name, req.body.category || 'General');
 
+  res.redirect('/lecturer/dashboard');
+});
+
+router.post('/upload-ca', authorize('lecturer'), (req, res) => {
+  const { student_id, course_id, assessment_type, score, semester } = req.body;
+  const numericScore = Number(score);
+  if (!student_id || !course_id || !semester || !['assignment', 'quiz'].includes(assessment_type)
+    || !Number.isFinite(numericScore) || numericScore < 0 || numericScore > 20) {
+    return res.redirect('/lecturer/dashboard');
+  }
+
+  db.prepare(`
+    INSERT INTO continuous_assessments (student_id, course_id, assessment_type, score, semester)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(student_id, course_id, assessment_type, semester)
+    DO UPDATE SET score = excluded.score
+  `).run(student_id, course_id, assessment_type, numericScore, semester);
   res.redirect('/lecturer/dashboard');
 });
 

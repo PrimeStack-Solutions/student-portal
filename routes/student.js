@@ -17,7 +17,6 @@ const pdfFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   cb(null, allowedExt.includes(ext));
 };
-const materialUpload = multer({ storage: upload.storage, fileFilter: pdfFilter });
 const assignmentFilter = (req, file, cb) => {
   const allowedExt = ['.pdf', '.doc', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
@@ -42,10 +41,19 @@ router.get('/dashboard', authorize('student'), (req, res) => {
   }
 
   const enrollments = db.prepare(`
-    SELECT e.id, e.status, c.code, c.name, c.credits, c.prerequisite, g.grade, g.semester
+    SELECT e.id, e.status, c.code, c.name, c.credits, c.prerequisite, g.grade, g.semester,
+      COALESCE(ca.assignment_score, 0) + COALESCE(ca.quiz_score, 0) AS ca_score,
+      CASE WHEN COALESCE(ca.assignment_score, 0) + COALESCE(ca.quiz_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
     LEFT JOIN grades g ON g.student_id = ? AND g.course_id = c.id
+    LEFT JOIN (
+      SELECT student_id, course_id, semester,
+        MAX(CASE WHEN assessment_type = 'assignment' THEN score END) AS assignment_score,
+        MAX(CASE WHEN assessment_type = 'quiz' THEN score END) AS quiz_score
+      FROM continuous_assessments
+      GROUP BY student_id, course_id, semester
+    ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
     WHERE e.student_id = ?
     ORDER BY e.semester, c.code
   `).all(student.id, student.id);
@@ -338,21 +346,6 @@ router.post('/upload-document', authorize('student'), upload.single('doc'), (req
   db.prepare('INSERT INTO documents (user_id, title, file_name, file_type) VALUES (?, ?, ?, ?)')
     .run(req.session.user.id, req.body.title || 'Uploaded document', req.file.filename, req.file.mimetype);
   res.redirect('/student/dashboard');
-});
-
-router.post('/upload-material', authorize('student'), materialUpload.single('material'), (req, res) => {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
-  if (!['lecturer', 'admin'].includes(user.role)) {
-    return res.status(403).render('forbidden', { user });
-  }
-
-  if (!req.file) {
-    return res.redirect('/student/materials');
-  }
-
-  db.prepare('INSERT INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(req.body.title || 'Study material', req.body.description || 'Shared learning resource', req.file.filename, req.file.mimetype, user.id, user.full_name, req.body.category || 'General');
-  res.redirect('/student/materials');
 });
 
 module.exports = router;

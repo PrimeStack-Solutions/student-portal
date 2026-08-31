@@ -48,6 +48,55 @@
     </div>
 
     <section class="card">
+      <h2>Upload Continuous Assessment</h2>
+      <p class="hint">Enter assignment or quiz marks out of 20. A combined CA mark below 15/40 disqualifies the student from the exam for that course.</p>
+      <form action="/lecturer/upload-ca" method="POST">
+        <label>Student</label>
+        <select name="student_id" required>
+          <option value="">Select student</option>
+          <% students.forEach(student => { %>
+            <option value="<%= student.id %>"><%= student.full_name %> (<%= student.student_number %>)</option>
+          <% }); %>
+        </select>
+        <label>Course</label>
+        <select name="course_id" required>
+          <option value="">Select course</option>
+          <% courses.forEach(course => { %>
+            <option value="<%= course.id %>"><%= course.code %> - <%= course.name %></option>
+          <% }); %>
+        </select>
+        <label>Assessment</label>
+        <select name="assessment_type" required>
+          <option value="assignment">Assignment</option>
+          <option value="quiz">Quiz</option>
+        </select>
+        <input type="number" name="score" min="0" max="20" step="0.1" placeholder="Score out of 20" required>
+        <input type="text" name="semester" placeholder="Semester (for example Fall)" required>
+        <button type="submit">Save CA Mark</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Continuous Assessment Records</h2>
+      <table>
+        <thead><tr><th>Student</th><th>Course</th><th>Semester</th><th>Assignment / 20</th><th>Quiz / 20</th><th>CA / 40</th><th>Exam Status</th></tr></thead>
+        <tbody>
+          <% assessments.forEach(item => { const caScore = Number(item.assignment_score || 0) + Number(item.quiz_score || 0); %>
+            <tr>
+              <td><%= item.student_name %> (<%= item.student_number %>)</td>
+              <td><%= item.code %> - <%= item.name %></td>
+              <td><%= item.semester %></td>
+              <td><%= item.assignment_score ?? 'Not recorded' %></td>
+              <td><%= item.quiz_score ?? 'Not recorded' %></td>
+              <td><%= caScore %> / 40</td>
+              <td><%= caScore >= 15 ? 'Eligible' : 'Disqualified' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
       <h2>Uploaded Materials</h2>
       <table>
         <thead>

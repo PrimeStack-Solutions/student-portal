@@ -106,6 +106,19 @@ db.exec(`
     FOREIGN KEY (course_id) REFERENCES courses(id)
   );
 
+  CREATE TABLE IF NOT EXISTS continuous_assessments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    assessment_type TEXT NOT NULL CHECK(assessment_type IN ('assignment', 'quiz')),
+    score REAL NOT NULL CHECK(score >= 0 AND score <= 20),
+    semester TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(student_id, course_id, assessment_type, semester),
+    FOREIGN KEY (student_id) REFERENCES students(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+  );
+
   CREATE TABLE IF NOT EXISTS payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
