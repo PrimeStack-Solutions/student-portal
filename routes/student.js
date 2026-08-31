@@ -67,7 +67,7 @@ router.get('/dashboard', authorize('student'), (req, res) => {
   const materials = db.prepare('SELECT * FROM materials ORDER BY id DESC LIMIT 5').all();
   const documents = db.prepare('SELECT * FROM documents WHERE user_id = ? ORDER BY id DESC').all(req.session.user.id);
   const results = db.prepare(`
-    SELECT g.semester, c.code, c.name, g.grade, g.gpa, g.final_exam_score
+    SELECT g.semester, c.code, c.name, g.grade, g.final_exam_score
     FROM grades g
     JOIN courses c ON c.id = g.course_id
     WHERE g.student_id = ?
@@ -150,7 +150,7 @@ router.get('/results', authorize('student'), (req, res) => {
   const selectedSemester = req.query.semester || 'all';
 
   let query = `
-    SELECT g.semester, c.code, c.name, g.grade, g.gpa, g.final_exam_score
+    SELECT g.semester, c.code, c.name, g.grade, g.final_exam_score
     FROM grades g
     JOIN courses c ON c.id = g.course_id
     WHERE g.student_id = ?

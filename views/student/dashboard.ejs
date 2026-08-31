@@ -46,7 +46,6 @@
         <h3>Academic status</h3>
         <p><strong>Program:</strong> <%= student.program %></p>
         <p><strong>Year:</strong> <%= student.year_of_study %></p>
-        <p><strong>GPA:</strong> <%= student.gpa %></p>
       </div>
       <div class="widget">
         <h3>Performance</h3>
@@ -124,14 +123,13 @@
     <section class="card">
       <h2>Results</h2>
       <table>
-        <thead><tr><th>Semester</th><th>Course</th><th>Grade</th><th>GPA</th></tr></thead>
+        <thead><tr><th>Semester</th><th>Course</th><th>Grade</th></tr></thead>
         <tbody>
           <% results.forEach(result => { %>
             <tr>
               <td><%= result.semester %></td>
               <td><%= result.code %> - <%= result.name %></td>
               <td><%= result.grade %></td>
-              <td><%= result.gpa %></td>
             </tr>
           <% }); %>
         </tbody>

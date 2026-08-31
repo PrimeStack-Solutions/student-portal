@@ -69,7 +69,6 @@
                 <th>Course</th>
                 <th>Final Exam / 60</th>
                 <th>Grade</th>
-                <th>GPA</th>
               </tr>
             </thead>
             <tbody>
@@ -78,7 +77,6 @@
                   <td><%= result.code %> - <%= result.name %></td>
                   <td><%= result.final_exam_score ?? 'Not recorded' %> / 60</td>
                   <td><%= result.grade %></td>
-                  <td><%= result.gpa %></td>
                 </tr>
               <% }); %>
             </tbody>
