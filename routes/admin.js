@@ -18,15 +18,6 @@ router.get('/dashboard', authorize('admin'), (req, res) => {
     ORDER BY a.id DESC
   `).all();
   const courses = db.prepare('SELECT * FROM courses ORDER BY code').all();
-  const pendingEnrollments = db.prepare(`
-    SELECT e.id, e.status, u.full_name AS student_name, c.code, c.name
-    FROM enrollments e
-    JOIN students s ON e.student_id = s.id
-    JOIN users u ON s.user_id = u.id
-    JOIN courses c ON e.course_id = c.id
-    WHERE e.status = 'pending'
-    ORDER BY e.id DESC
-  `).all();
   const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC LIMIT 5').all();
 
   res.render('admin/dashboard', {
@@ -34,7 +25,6 @@ router.get('/dashboard', authorize('admin'), (req, res) => {
     students,
     applicants,
     courses,
-    pendingEnrollments,
     announcements
   });
 });
@@ -74,18 +64,6 @@ router.post('/reject-application', authorize('admin'), (req, res) => {
     .run(applicant.user_id, 'Application Rejected', `Your application was rejected. Reason: ${rejection_reason || 'Application did not meet requirements.'}`, 'email');
   db.prepare('INSERT INTO notifications (user_id, title, message, delivery_mode) VALUES (?, ?, ?, ?)')
     .run(applicant.user_id, 'Application Rejected SMS', `Your application was rejected. Reason: ${rejection_reason || 'Application did not meet requirements.'}`, 'sms');
-  res.redirect('/admin/dashboard');
-});
-
-router.post('/approve-enrollment', authorize('admin'), (req, res) => {
-  const { enrollment_id } = req.body;
-  db.prepare('UPDATE enrollments SET status = ? WHERE id = ?').run('approved', enrollment_id);
-  res.redirect('/admin/dashboard');
-});
-
-router.post('/reject-enrollment', authorize('admin'), (req, res) => {
-  const { enrollment_id } = req.body;
-  db.prepare('UPDATE enrollments SET status = ? WHERE id = ?').run('rejected', enrollment_id);
   res.redirect('/admin/dashboard');
 });
 

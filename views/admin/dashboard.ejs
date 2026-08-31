@@ -89,22 +89,6 @@
       <% }); %>
     </section>
     <section class="card">
-      <h2>Course Registrations</h2>
-      <% pendingEnrollments.forEach(item => { %>
-        <div class="student-card">
-          <p><strong><%= item.student_name %></strong> requested <%= item.code %></p>
-          <form action="/admin/approve-enrollment" method="POST" style="display:inline-block">
-            <input type="hidden" name="enrollment_id" value="<%= item.id %>">
-            <button type="submit">Approve</button>
-          </form>
-          <form action="/admin/reject-enrollment" method="POST" style="display:inline-block">
-            <input type="hidden" name="enrollment_id" value="<%= item.id %>">
-            <button type="submit">Reject</button>
-          </form>
-        </div>
-      <% }); %>
-    </section>
-    <section class="card">
       <h2>Create Course</h2>
       <form action="/admin/create-course" method="POST">
         <input type="text" name="code" placeholder="Course Code">
