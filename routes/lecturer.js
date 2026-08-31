@@ -47,6 +47,15 @@ router.get('/dashboard', authorize('lecturer'), (req, res) => {
     GROUP BY ca.student_id, ca.course_id, ca.semester
     ORDER BY ca.id DESC
   `).all();
+  const excludedStudents = db.prepare(`
+    SELECT g.id, u.full_name AS student_name, s.student_number, c.code, c.name, g.semester
+    FROM grades g
+    JOIN students s ON s.id = g.student_id
+    JOIN users u ON u.id = s.user_id
+    JOIN courses c ON c.id = g.course_id
+    WHERE g.grade = 'E'
+    ORDER BY u.full_name, c.code
+  `).all();
 
   res.render('lecturer/dashboard', {
     user,
@@ -54,8 +63,14 @@ router.get('/dashboard', authorize('lecturer'), (req, res) => {
     announcements,
     students,
     courses,
-    assessments
+    assessments,
+    excludedStudents
   });
+});
+
+router.post('/revoke-exclusion', authorize('lecturer'), (req, res) => {
+  db.prepare("DELETE FROM grades WHERE id = ? AND grade = 'E'").run(req.body.result_id);
+  res.redirect('/lecturer/dashboard');
 });
 
 router.post('/upload-material', authorize('lecturer'), upload.single('material'), (req, res) => {

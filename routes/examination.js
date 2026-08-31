@@ -32,13 +32,28 @@ router.get('/dashboard', authorize('examination'), (req, res) => {
     JOIN courses c ON c.id = g.course_id
     ORDER BY g.id DESC
   `).all();
+  const excludedStudents = db.prepare(`
+    SELECT g.id, u.full_name AS student_name, s.student_number, c.code, c.name, g.semester
+    FROM grades g
+    JOIN students s ON s.id = g.student_id
+    JOIN users u ON u.id = s.user_id
+    JOIN courses c ON c.id = g.course_id
+    WHERE g.grade = 'E'
+    ORDER BY u.full_name, c.code
+  `).all();
 
   res.render('examination/dashboard', {
     user: req.session.user,
     students,
     courses,
-    results
+    results,
+    excludedStudents
   });
+});
+
+router.post('/revoke-exclusion', authorize('examination'), (req, res) => {
+  db.prepare("DELETE FROM grades WHERE id = ? AND grade = 'E'").run(req.body.result_id);
+  res.redirect('/examination/dashboard');
 });
 
 router.post('/upload-result', authorize('examination'), (req, res) => {

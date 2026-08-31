@@ -43,6 +43,32 @@
     </section>
 
     <section class="card">
+      <h2>Excluded Students</h2>
+      <% if (!excludedStudents.length) { %>
+        <p>No students are currently excluded.</p>
+      <% } else { %>
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Semester</th><th>Action</th></tr></thead>
+          <tbody>
+            <% excludedStudents.forEach(student => { %>
+              <tr>
+                <td><%= student.student_name %> (<%= student.student_number %>)</td>
+                <td><%= student.code %> - <%= student.name %></td>
+                <td><%= student.semester %></td>
+                <td>
+                  <form action="/examination/revoke-exclusion" method="POST">
+                    <input type="hidden" name="result_id" value="<%= student.id %>">
+                    <button type="submit">Revoke E</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+
+    <section class="card">
       <h2>Published Results</h2>
       <table>
         <thead>
