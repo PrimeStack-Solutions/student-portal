@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Courses</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/courses">My Courses</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/results">Results</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/student/payments">Payments</a>
+      <a href="/student/profile">Profile</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>My Courses</h1>
+    <section class="card">
+      <form method="GET" action="/student/courses" style="display:flex; flex-direction:row; align-items:end; gap:12px; flex-wrap:wrap;">
+        <div>
+          <label for="semester">View semester</label>
+          <select id="semester" name="semester">
+            <option value="all" <%= selectedSemester === 'all' ? 'selected' : '' %>>All semesters</option>
+            <% semesters.forEach(semester => { %>
+              <option value="<%= semester %>" <%= selectedSemester === semester ? 'selected' : '' %>><%= semester %></option>
+            <% }); %>
+          </select>
+        </div>
+        <button type="submit">View Courses</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2><%= selectedSemester === 'all' ? 'All Semesters' : selectedSemester %></h2>
+      <% if (!courses.length) { %>
+        <p>No courses are registered for this semester.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Course</th>
+              <th>Credits</th>
+              <th>Status</th>
+              <th>CA / 40</th>
+              <th>Final Exam Status</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% courses.forEach(course => { %>
+              <tr>
+                <td><%= course.code %></td>
+                <td><%= course.name %></td>
+                <td><%= course.credits %></td>
+                <td><%= course.status %></td>
+                <td><%= course.ca_score %> / 40</td>
+                <td><%= course.exam_status %></td>
+                <td><%= course.grade || 'Pending' %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

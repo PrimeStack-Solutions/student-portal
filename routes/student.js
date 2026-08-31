@@ -105,6 +105,45 @@ router.get('/announcements', authorize('student'), (req, res) => {
   res.render('student/announcements', { user: userRow, student, announcements });
 });
 
+router.get('/courses', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const selectedSemester = req.query.semester || 'all';
+  const semesters = db.prepare('SELECT DISTINCT semester FROM enrollments WHERE student_id = ? ORDER BY semester')
+    .all(student.id)
+    .map(item => item.semester)
+    .filter(Boolean);
+  let query = `
+    SELECT e.id, e.status, e.semester, c.code, c.name, c.credits,
+      g.grade,
+      COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) AS ca_score,
+      CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
+    FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    LEFT JOIN grades g ON g.student_id = e.student_id AND g.course_id = e.course_id AND g.semester = e.semester
+    LEFT JOIN (
+      SELECT student_id, course_id, semester,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 2 THEN score END) AS assignment_two,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 1 THEN score END) AS quiz_one,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 2 THEN score END) AS quiz_two,
+        MAX(CASE WHEN assessment_type = 'test' THEN score END) AS test_score
+      FROM continuous_assessments
+      GROUP BY student_id, course_id, semester
+    ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
+    WHERE e.student_id = ?
+  `;
+  const params = [student.id];
+  if (selectedSemester !== 'all') {
+    query += ' AND e.semester = ?';
+    params.push(selectedSemester);
+  }
+  query += ' ORDER BY e.semester, c.code';
+
+  const courses = db.prepare(query).all(...params);
+  res.render('student/courses', { user: userRow, student, courses, semesters, selectedSemester });
+});
+
 router.get('/results', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);

@@ -283,6 +283,23 @@ if (duplicateCourses.length) {
 }
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS courses_code_unique ON courses(code)');
 
+const duplicateEnrollments = db.prepare(`
+  SELECT student_id, course_id, semester, MIN(id) AS keep_id, GROUP_CONCAT(id) AS duplicate_ids
+  FROM enrollments
+  GROUP BY student_id, course_id, semester
+  HAVING COUNT(*) > 1
+`).all();
+if (duplicateEnrollments.length) {
+  db.transaction(() => {
+    duplicateEnrollments.forEach(enrollment => {
+      enrollment.duplicate_ids.split(',')
+        .filter(id => Number(id) !== enrollment.keep_id)
+        .forEach(id => db.prepare('DELETE FROM enrollments WHERE id = ?').run(id));
+    });
+  })();
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS enrollments_student_course_semester_unique ON enrollments(student_id, course_id, semester)');
+
 const insertUser = db.prepare(`
   INSERT INTO users (username, password_hash, role, full_name, email)
   VALUES (?, ?, ?, ?, ?)
