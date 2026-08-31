@@ -34,8 +34,11 @@ router.get('/dashboard', authorize('lecturer'), (req, res) => {
   const courses = db.prepare('SELECT id, code, name FROM courses ORDER BY code').all();
   const assessments = db.prepare(`
     SELECT ca.student_id, ca.course_id, ca.semester,
-      MAX(CASE WHEN ca.assessment_type = 'assignment' THEN ca.score END) AS assignment_score,
-      MAX(CASE WHEN ca.assessment_type = 'quiz' THEN ca.score END) AS quiz_score,
+      MAX(CASE WHEN ca.assessment_type = 'assignment' AND ca.assessment_number = 1 THEN ca.score END) AS assignment_one,
+      MAX(CASE WHEN ca.assessment_type = 'assignment' AND ca.assessment_number = 2 THEN ca.score END) AS assignment_two,
+      MAX(CASE WHEN ca.assessment_type = 'quiz' AND ca.assessment_number = 1 THEN ca.score END) AS quiz_one,
+      MAX(CASE WHEN ca.assessment_type = 'quiz' AND ca.assessment_number = 2 THEN ca.score END) AS quiz_two,
+      MAX(CASE WHEN ca.assessment_type = 'test' THEN ca.score END) AS test_score,
       c.code, c.name, u.full_name AS student_name, s.student_number
     FROM continuous_assessments ca
     JOIN students s ON s.id = ca.student_id
@@ -67,19 +70,22 @@ router.post('/upload-material', authorize('lecturer'), upload.single('material')
 });
 
 router.post('/upload-ca', authorize('lecturer'), (req, res) => {
-  const { student_id, course_id, assessment_type, score, semester } = req.body;
+  const { student_id, course_id, assessment_type, assessment_number, score, semester } = req.body;
   const numericScore = Number(score);
-  if (!student_id || !course_id || !semester || !['assignment', 'quiz'].includes(assessment_type)
-    || !Number.isFinite(numericScore) || numericScore < 0 || numericScore > 20) {
+  const assessmentNumber = Number(assessment_number);
+  const maxScore = assessment_type === 'test' ? 40 : 20;
+  const validNumber = assessment_type === 'test' ? assessmentNumber === 1 : [1, 2].includes(assessmentNumber);
+  if (!student_id || !course_id || !semester || !['assignment', 'quiz', 'test'].includes(assessment_type)
+    || !validNumber || !Number.isFinite(numericScore) || numericScore < 0 || numericScore > maxScore) {
     return res.redirect('/lecturer/dashboard');
   }
 
   db.prepare(`
-    INSERT INTO continuous_assessments (student_id, course_id, assessment_type, score, semester)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(student_id, course_id, assessment_type, semester)
-    DO UPDATE SET score = excluded.score
-  `).run(student_id, course_id, assessment_type, numericScore, semester);
+    INSERT INTO continuous_assessments (student_id, course_id, assessment_type, assessment_number, max_score, score, semester)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(student_id, course_id, assessment_type, assessment_number, semester)
+    DO UPDATE SET max_score = excluded.max_score, score = excluded.score
+  `).run(student_id, course_id, assessment_type, assessmentNumber, maxScore, numericScore, semester);
   res.redirect('/lecturer/dashboard');
 });
 

@@ -98,7 +98,7 @@
       </form>
       <h2>My Courses</h2>
       <table>
-        <thead><tr><th>Code</th><th>Name</th><th>Semester</th><th>Status</th><th>CA / 40</th><th>Exam Status</th><th>Grade</th><th>Action</th></tr></thead>
+        <thead><tr><th>Code</th><th>Name</th><th>Semester</th><th>Status</th><th>Test / 40</th><th>Final Exam Status</th><th>Grade</th><th>Action</th></tr></thead>
         <tbody>
           <% enrollments.forEach(enrollment => { %>
             <tr>
@@ -106,7 +106,7 @@
               <td><%= enrollment.name %></td>
               <td><%= enrollment.semester || 'N/A' %></td>
               <td><%= enrollment.status %></td>
-              <td><%= enrollment.ca_score %> / 40</td>
+              <td><%= enrollment.test_score || 0 %> / 40</td>
               <td><%= enrollment.exam_status %></td>
               <td><%= enrollment.grade || 'Pending' %></td>
               <td>

@@ -51,6 +51,7 @@
             <thead>
               <tr>
                 <th>Course</th>
+                <th>Final Exam / 60</th>
                 <th>Grade</th>
                 <th>GPA</th>
               </tr>
@@ -59,6 +60,7 @@
               <% groupedResults[semester].forEach(result => { %>
                 <tr>
                   <td><%= result.code %> - <%= result.name %></td>
+                  <td><%= result.final_exam_score ?? 'Not recorded' %> / 60</td>
                   <td><%= result.grade %></td>
                   <td><%= result.gpa %></td>
                 </tr>

@@ -49,7 +49,7 @@
 
     <section class="card">
       <h2>Upload Continuous Assessment</h2>
-      <p class="hint">Enter assignment or quiz marks out of 20. A combined CA mark below 15/40 disqualifies the student from the exam for that course.</p>
+      <p class="hint">Enter two assignments and two quizzes out of 20 each, plus one test out of 40. A test mark below 15/40 disqualifies the student from the final exam for that course.</p>
       <form action="/lecturer/upload-ca" method="POST">
         <label>Student</label>
         <select name="student_id" required>
@@ -69,8 +69,14 @@
         <select name="assessment_type" required>
           <option value="assignment">Assignment</option>
           <option value="quiz">Quiz</option>
+          <option value="test">Test</option>
         </select>
-        <input type="number" name="score" min="0" max="20" step="0.1" placeholder="Score out of 20" required>
+        <label>Assessment Number</label>
+        <select name="assessment_number" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select>
+        <input type="number" name="score" min="0" max="40" step="0.1" placeholder="Score (20 for assignment/quiz, 40 for test)" required>
         <input type="text" name="semester" placeholder="Semester (for example Fall)" required>
         <button type="submit">Save CA Mark</button>
       </form>
@@ -79,17 +85,19 @@
     <section class="card">
       <h2>Continuous Assessment Records</h2>
       <table>
-        <thead><tr><th>Student</th><th>Course</th><th>Semester</th><th>Assignment / 20</th><th>Quiz / 20</th><th>CA / 40</th><th>Exam Status</th></tr></thead>
+        <thead><tr><th>Student</th><th>Course</th><th>Semester</th><th>Assignment 1 / 20</th><th>Assignment 2 / 20</th><th>Quiz 1 / 20</th><th>Quiz 2 / 20</th><th>Test / 40</th><th>Final Exam Status</th></tr></thead>
         <tbody>
-          <% assessments.forEach(item => { const caScore = Number(item.assignment_score || 0) + Number(item.quiz_score || 0); %>
+          <% assessments.forEach(item => { const testScore = Number(item.test_score || 0); %>
             <tr>
               <td><%= item.student_name %> (<%= item.student_number %>)</td>
               <td><%= item.code %> - <%= item.name %></td>
               <td><%= item.semester %></td>
-              <td><%= item.assignment_score ?? 'Not recorded' %></td>
-              <td><%= item.quiz_score ?? 'Not recorded' %></td>
-              <td><%= caScore %> / 40</td>
-              <td><%= caScore >= 15 ? 'Eligible' : 'Disqualified' %></td>
+              <td><%= item.assignment_one ?? 'Not recorded' %></td>
+              <td><%= item.assignment_two ?? 'Not recorded' %></td>
+              <td><%= item.quiz_one ?? 'Not recorded' %></td>
+              <td><%= item.quiz_two ?? 'Not recorded' %></td>
+              <td><%= item.test_score ?? 'Not recorded' %> / 40</td>
+              <td><%= testScore >= 15 ? 'Eligible' : 'Disqualified' %></td>
             </tr>
           <% }); %>
         </tbody>

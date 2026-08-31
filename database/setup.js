@@ -110,11 +110,13 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     course_id INTEGER NOT NULL,
-    assessment_type TEXT NOT NULL CHECK(assessment_type IN ('assignment', 'quiz')),
-    score REAL NOT NULL CHECK(score >= 0 AND score <= 20),
+    assessment_type TEXT NOT NULL CHECK(assessment_type IN ('assignment', 'quiz', 'test')),
+    assessment_number INTEGER NOT NULL DEFAULT 1,
+    max_score REAL NOT NULL DEFAULT 20,
+    score REAL NOT NULL CHECK(score >= 0 AND score <= 40),
     semester TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(student_id, course_id, assessment_type, semester),
+    UNIQUE(student_id, course_id, assessment_type, assessment_number, semester),
     FOREIGN KEY (student_id) REFERENCES students(id),
     FOREIGN KEY (course_id) REFERENCES courses(id)
   );
@@ -186,6 +188,33 @@ db.exec(`
   );
 `);
 
+const assessmentSchema = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'continuous_assessments'").get();
+if (assessmentSchema && !(assessmentSchema.sql || '').includes('assessment_number')) {
+  db.pragma('foreign_keys = OFF');
+  db.exec(`
+    ALTER TABLE continuous_assessments RENAME TO continuous_assessments_legacy;
+    CREATE TABLE continuous_assessments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      course_id INTEGER NOT NULL,
+      assessment_type TEXT NOT NULL CHECK(assessment_type IN ('assignment', 'quiz', 'test')),
+      assessment_number INTEGER NOT NULL DEFAULT 1,
+      max_score REAL NOT NULL DEFAULT 20,
+      score REAL NOT NULL CHECK(score >= 0 AND score <= 40),
+      semester TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(student_id, course_id, assessment_type, assessment_number, semester),
+      FOREIGN KEY (student_id) REFERENCES students(id),
+      FOREIGN KEY (course_id) REFERENCES courses(id)
+    );
+    INSERT INTO continuous_assessments (id, student_id, course_id, assessment_type, assessment_number, max_score, score, semester, created_at)
+      SELECT id, student_id, course_id, assessment_type, 1, 20, score, semester, created_at
+      FROM continuous_assessments_legacy;
+    DROP TABLE continuous_assessments_legacy;
+  `);
+  db.pragma('foreign_keys = ON');
+}
+
 function columnExists(table, column) {
   return db.prepare(`PRAGMA table_info(${table})`).all().some(col => col.name === column);
 }
@@ -227,6 +256,7 @@ addColumnIfMissing('students', 'balance_payment_receipt_file', "balance_payment_
 addColumnIfMissing('students', 'balance_payment_status', "balance_payment_status TEXT DEFAULT 'not_required'");
 addColumnIfMissing('students', 'balance_payment_amount', "balance_payment_amount REAL DEFAULT 0");
 addColumnIfMissing('students', 'balance_payment_reference', "balance_payment_reference TEXT DEFAULT ''");
+addColumnIfMissing('grades', 'final_exam_score', 'final_exam_score REAL');
 
 addColumnIfMissing('courses', 'credits', "credits INTEGER DEFAULT 3");
 addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Fall'");

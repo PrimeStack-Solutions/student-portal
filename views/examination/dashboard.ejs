@@ -36,6 +36,7 @@
         </select>
         <input type="text" name="grade" placeholder="Grade (for example A+)" required>
         <input type="number" name="gpa" min="0" max="4" step="0.1" placeholder="GPA" required>
+        <input type="number" name="final_exam_score" min="0" max="60" step="0.1" placeholder="Final exam score out of 60" required>
         <input type="text" name="semester" placeholder="Semester (for example Fall)" required>
         <button type="submit">Save Result</button>
       </form>
@@ -45,7 +46,7 @@
       <h2>Published Results</h2>
       <table>
         <thead>
-          <tr><th>Student</th><th>Course</th><th>Semester</th><th>Grade</th><th>GPA</th></tr>
+          <tr><th>Student</th><th>Course</th><th>Semester</th><th>Final Exam / 60</th><th>Grade</th><th>GPA</th></tr>
         </thead>
         <tbody>
           <% results.forEach(result => { %>
@@ -53,6 +54,7 @@
               <td><%= result.student_name %> (<%= result.student_number %>)</td>
               <td><%= result.code %> - <%= result.name %></td>
               <td><%= result.semester %></td>
+              <td><%= result.final_exam_score ?? 'Not recorded' %> / 60</td>
               <td><%= result.grade %></td>
               <td><%= result.gpa %></td>
             </tr>

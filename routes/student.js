@@ -42,15 +42,14 @@ router.get('/dashboard', authorize('student'), (req, res) => {
 
   const enrollments = db.prepare(`
     SELECT e.id, e.status, c.code, c.name, c.credits, c.prerequisite, g.grade, g.semester,
-      COALESCE(ca.assignment_score, 0) + COALESCE(ca.quiz_score, 0) AS ca_score,
-      CASE WHEN COALESCE(ca.assignment_score, 0) + COALESCE(ca.quiz_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
+      ca.test_score,
+      CASE WHEN COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
     LEFT JOIN grades g ON g.student_id = ? AND g.course_id = c.id
     LEFT JOIN (
       SELECT student_id, course_id, semester,
-        MAX(CASE WHEN assessment_type = 'assignment' THEN score END) AS assignment_score,
-        MAX(CASE WHEN assessment_type = 'quiz' THEN score END) AS quiz_score
+        MAX(CASE WHEN assessment_type = 'test' THEN score END) AS test_score
       FROM continuous_assessments
       GROUP BY student_id, course_id, semester
     ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
@@ -64,7 +63,7 @@ router.get('/dashboard', authorize('student'), (req, res) => {
   const materials = db.prepare('SELECT * FROM materials ORDER BY id DESC LIMIT 5').all();
   const documents = db.prepare('SELECT * FROM documents WHERE user_id = ? ORDER BY id DESC').all(req.session.user.id);
   const results = db.prepare(`
-    SELECT g.semester, c.code, c.name, g.grade, g.gpa
+    SELECT g.semester, c.code, c.name, g.grade, g.gpa, g.final_exam_score
     FROM grades g
     JOIN courses c ON c.id = g.course_id
     WHERE g.student_id = ?
