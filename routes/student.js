@@ -42,13 +42,17 @@ router.get('/dashboard', authorize('student'), (req, res) => {
 
   const enrollments = db.prepare(`
     SELECT e.id, e.status, c.code, c.name, c.credits, c.prerequisite, g.grade, g.semester,
-      ca.test_score,
-      CASE WHEN COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
+      COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) AS ca_score,
+      CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
     LEFT JOIN grades g ON g.student_id = ? AND g.course_id = c.id
     LEFT JOIN (
       SELECT student_id, course_id, semester,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 2 THEN score END) AS assignment_two,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 1 THEN score END) AS quiz_one,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 2 THEN score END) AS quiz_two,
         MAX(CASE WHEN assessment_type = 'test' THEN score END) AS test_score
       FROM continuous_assessments
       GROUP BY student_id, course_id, semester

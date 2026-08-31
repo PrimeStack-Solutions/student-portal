@@ -73,7 +73,7 @@ router.post('/upload-ca', authorize('lecturer'), (req, res) => {
   const { student_id, course_id, assessment_type, assessment_number, score, semester } = req.body;
   const numericScore = Number(score);
   const assessmentNumber = Number(assessment_number);
-  const maxScore = assessment_type === 'test' ? 40 : 20;
+  const maxScore = 8;
   const validNumber = assessment_type === 'test' ? assessmentNumber === 1 : [1, 2].includes(assessmentNumber);
   if (!student_id || !course_id || !semester || !['assignment', 'quiz', 'test'].includes(assessment_type)
     || !validNumber || !Number.isFinite(numericScore) || numericScore < 0 || numericScore > maxScore) {
