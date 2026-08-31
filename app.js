@@ -1,4 +1,5 @@
 const express = require('express');
+const https = require('https');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
@@ -14,6 +15,10 @@ const db = require('./database/setup');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
+const httpsOptions = {
+  pfx: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.pfx')),
+  passphrase: 'student-portal'
+};
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -83,7 +88,7 @@ app.post('/api/applications', (req, res) => {
   res.json({ id: result.lastInsertRowid, message: 'Application recorded' });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Student Portal running at http://${HOST}:${PORT}`);
-  console.log(`Also available at http://localhost:${PORT}`);
+https.createServer(httpsOptions, app).listen(PORT, HOST, () => {
+  console.log(`Student Portal running at https://${HOST}:${PORT}`);
+  console.log(`Also available at https://localhost:${PORT}`);
 });
