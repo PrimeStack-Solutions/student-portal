@@ -262,6 +262,27 @@ addColumnIfMissing('courses', 'credits', "credits INTEGER DEFAULT 3");
 addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Fall'");
 addColumnIfMissing('courses', 'prerequisite', "prerequisite TEXT DEFAULT ''");
 
+const duplicateCourses = db.prepare(`
+  SELECT code, MIN(id) AS keep_id, GROUP_CONCAT(id) AS duplicate_ids
+  FROM courses
+  GROUP BY code
+  HAVING COUNT(*) > 1
+`).all();
+if (duplicateCourses.length) {
+  db.transaction(() => {
+    duplicateCourses.forEach(course => {
+      const duplicateIds = course.duplicate_ids.split(',').filter(id => Number(id) !== course.keep_id);
+      duplicateIds.forEach(duplicateId => {
+        db.prepare('UPDATE enrollments SET course_id = ? WHERE course_id = ?').run(course.keep_id, duplicateId);
+        db.prepare('UPDATE grades SET course_id = ? WHERE course_id = ?').run(course.keep_id, duplicateId);
+        db.prepare('UPDATE continuous_assessments SET course_id = ? WHERE course_id = ?').run(course.keep_id, duplicateId);
+        db.prepare('DELETE FROM courses WHERE id = ?').run(duplicateId);
+      });
+    });
+  })();
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS courses_code_unique ON courses(code)');
+
 const insertUser = db.prepare(`
   INSERT INTO users (username, password_hash, role, full_name, email)
   VALUES (?, ?, ?, ?, ?)
