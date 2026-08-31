@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examination Department</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Examination Department)</span>
+    <div class="nav-links">
+      <a href="/examination/dashboard">Home</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Examination Department</h1>
+    <section class="card">
+      <h2>Upload Student Result</h2>
+      <form action="/examination/upload-result" method="POST">
+        <label for="student_id">Student</label>
+        <select id="student_id" name="student_id" required>
+          <option value="">Select student</option>
+          <% students.forEach(student => { %>
+            <option value="<%= student.id %>"><%= student.full_name %> (<%= student.student_number %>)</option>
+          <% }); %>
+        </select>
+        <label for="course_id">Course</label>
+        <select id="course_id" name="course_id" required>
+          <option value="">Select course</option>
+          <% courses.forEach(course => { %>
+            <option value="<%= course.id %>"><%= course.code %> - <%= course.name %></option>
+          <% }); %>
+        </select>
+        <input type="text" name="grade" placeholder="Grade (for example A+)" required>
+        <input type="number" name="gpa" min="0" max="4" step="0.1" placeholder="GPA" required>
+        <input type="text" name="semester" placeholder="Semester (for example Fall)" required>
+        <button type="submit">Save Result</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Published Results</h2>
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Course</th><th>Semester</th><th>Grade</th><th>GPA</th></tr>
+        </thead>
+        <tbody>
+          <% results.forEach(result => { %>
+            <tr>
+              <td><%= result.student_name %> (<%= result.student_number %>)</td>
+              <td><%= result.code %> - <%= result.name %></td>
+              <td><%= result.semester %></td>
+              <td><%= result.grade %></td>
+              <td><%= result.gpa %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

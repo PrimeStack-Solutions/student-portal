@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
 const adminRoutes = require('./routes/admin');
 const lecturerRoutes = require('./routes/lecturer');
+const examinationRoutes = require('./routes/examination');
 const accountantRoutes = require('./routes/accountant');
 const applicantRoutes = require('./routes/applicant');
 const db = require('./database/setup');
@@ -37,6 +38,7 @@ app.use('/', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/admin', adminRoutes);
 app.use('/lecturer', lecturerRoutes);
+app.use('/examination', examinationRoutes);
 app.use('/accountant', accountantRoutes);
 app.use('/applicant', applicantRoutes);
 

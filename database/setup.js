@@ -11,7 +11,7 @@ if (fs.existsSync(dbPath)) {
     const schemaRow = legacyCheck.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").get();
     legacyCheck.close();
 
-    if (schemaRow && /role TEXT NOT NULL CHECK\(role IN \('student', 'accountant', 'admin', 'applicant'\)\)/.test(schemaRow.sql || '')) {
+    if (schemaRow && !(schemaRow.sql || '').includes("'examination'")) {
       fs.unlinkSync(dbPath);
     }
   } catch (error) {
@@ -27,7 +27,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('student', 'accountant', 'admin', 'applicant', 'lecturer')),
+    role TEXT NOT NULL CHECK(role IN ('student', 'accountant', 'admin', 'applicant', 'lecturer', 'examination')),
     full_name TEXT NOT NULL,
     email TEXT NOT NULL
   );
@@ -276,6 +276,7 @@ const bobId = ensureUser('bob_accountant', 'accountant', 'Bob Wilson', 'bob@univ
 const aliceId = ensureUser('alice_admin', 'admin', 'Alice Johnson', 'alice@university.edu');
 const mayaId = ensureUser('maya_applicant', 'applicant', 'Maya Chen', 'maya@university.edu');
 const lecturerId = ensureUser('dr_owens', 'lecturer', 'Dr. Daniel Owens', 'lecturer@university.edu');
+const examinationId = ensureUser('exam_officer', 'examination', 'Examination Officer', 'examinations@university.edu');
 
 const existingApplicant = db.prepare('SELECT id FROM applicants WHERE user_id = ?').get(mayaId);
 if (!existingApplicant) {

@@ -46,6 +46,7 @@ The local certificate is self-signed, so your browser may ask you to accept a se
 | jane_student | password123 | Student (John Phiri) |
 | bob_accountant | password123 | Accountant |
 | alice_admin | password123 | Admin |
+| exam_officer | password123 | Examination Department |
 
 ## License
 

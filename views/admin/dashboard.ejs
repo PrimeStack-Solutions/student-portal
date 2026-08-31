@@ -121,21 +121,16 @@
         <button type="submit">Publish</button>
       </form>
       <ul>
-        <% announcements.forEach(item => { %><li><strong><%= item.title %>:</strong> <%= item.body %></li><% }); %>
+        <% announcements.forEach(item => { %>
+          <li>
+            <strong><%= item.title %>:</strong> <%= item.body %>
+            <form action="/admin/delete-announcement" method="POST" style="display:inline-block; margin-left:8px;">
+              <input type="hidden" name="announcement_id" value="<%= item.id %>">
+              <button type="submit">Delete</button>
+            </form>
+          </li>
+        <% }); %>
       </ul>
-      <h2>Upload Study Material</h2>
-      <form action="/admin/upload-material" method="POST" enctype="multipart/form-data">
-        <input type="text" name="title" placeholder="Material title" required>
-        <textarea name="description" placeholder="Short description"></textarea>
-        <select name="category">
-          <option value="General">General</option>
-          <option value="Core Course">Core Course</option>
-          <option value="Program Guide">Program Guide</option>
-          <option value="Academic Support">Academic Support</option>
-        </select>
-        <input type="file" name="material" accept=".pdf" required>
-        <button type="submit">Upload PDF</button>
-      </form>
     </section>
   </div>
 </body>
