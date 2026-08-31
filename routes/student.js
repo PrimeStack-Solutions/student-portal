@@ -150,7 +150,7 @@ router.get('/results', authorize('student'), (req, res) => {
   const selectedSemester = req.query.semester || 'all';
 
   let query = `
-    SELECT g.semester, c.code, c.name, g.grade, g.gpa
+    SELECT g.semester, c.code, c.name, g.grade, g.gpa, g.final_exam_score
     FROM grades g
     JOIN courses c ON c.id = g.course_id
     WHERE g.student_id = ?
