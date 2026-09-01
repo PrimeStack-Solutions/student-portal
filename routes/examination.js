@@ -15,6 +15,36 @@ function calculateGrade(total) {
   return 'D';
 }
 
+function countWorkingDays(start, end) {
+  if (!start || !end) return 0;
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 0;
+
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+
+  let workingDays = 0;
+  const cursor = new Date(startDate);
+  cursor.setDate(cursor.getDate() + 1);
+
+  while (cursor < endDate) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) {
+      workingDays += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return workingDays;
+}
+
+function canEditResult(createdAt) {
+  if (!createdAt) return true;
+  return countWorkingDays(new Date(createdAt), new Date()) < 10;
+}
+
 function hasExamRegistration(studentId, courseId, semester) {
   return !!db.prepare('SELECT 1 FROM exam_registrations WHERE student_id = ? AND course_id = ? AND semester = ? LIMIT 1')
     .get(studentId, courseId, semester);
@@ -93,13 +123,18 @@ router.post('/upload-result', authorize('examination'), (req, res) => {
   const caScore = Number(ca.score);
   const grade = caScore < 15 ? 'D' : calculateGrade(caScore + examScore);
 
-  const existing = db.prepare('SELECT id FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
+  const existing = db.prepare('SELECT id, created_at FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
     .get(student_id, course_id, semester);
+
+  if (existing && existing.created_at && !canEditResult(existing.created_at)) {
+    return res.redirect('/examination/dashboard');
+  }
+
   if (existing) {
-    db.prepare('UPDATE grades SET grade = ?, final_exam_score = ? WHERE id = ?')
+    db.prepare('UPDATE grades SET grade = ?, final_exam_score = ?, created_at = COALESCE(created_at, CURRENT_TIMESTAMP) WHERE id = ?')
       .run(grade, examScore, existing.id);
   } else {
-    db.prepare('INSERT INTO grades (student_id, course_id, grade, final_exam_score, semester) VALUES (?, ?, ?, ?, ?)')
+    db.prepare('INSERT INTO grades (student_id, course_id, grade, final_exam_score, semester, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)')
       .run(student_id, course_id, grade, examScore, semester);
   }
 
