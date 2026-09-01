@@ -95,6 +95,16 @@ db.exec(`
     FOREIGN KEY (course_id) REFERENCES courses(id)
   );
 
+  CREATE TABLE IF NOT EXISTS exam_registrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    semester TEXT DEFAULT 'Fall',
+    status TEXT DEFAULT 'registered',
+    FOREIGN KEY (student_id) REFERENCES students(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+  );
+
   CREATE TABLE IF NOT EXISTS grades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
@@ -228,6 +238,7 @@ function addColumnIfMissing(table, columnName, definition) {
 addColumnIfMissing('applicants', 'study_mode', "study_mode TEXT DEFAULT 'Full-time'");
 addColumnIfMissing('applicants', 'nationality', "nationality TEXT DEFAULT 'Not specified'");
 addColumnIfMissing('applicants', 'national_id', "national_id TEXT DEFAULT ''");
+addColumnIfMissing('announcements', 'source', "source TEXT DEFAULT 'General'");
 addColumnIfMissing('applicants', 'student_number', "student_number TEXT DEFAULT ''");
 addColumnIfMissing('applicants', 'status', "status TEXT DEFAULT 'submitted'");
 addColumnIfMissing('applicants', 'documents', "documents TEXT DEFAULT ''");
@@ -299,6 +310,7 @@ if (duplicateEnrollments.length) {
   })();
 }
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS enrollments_student_course_semester_unique ON enrollments(student_id, course_id, semester)');
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS exam_registrations_student_course_semester_unique ON exam_registrations(student_id, course_id, semester)');
 
 const insertUser = db.prepare(`
   INSERT INTO users (username, password_hash, role, full_name, email)
@@ -324,6 +336,92 @@ const insertAccountant = db.prepare(`
 const insertCourse = db.prepare(`
   INSERT OR IGNORE INTO courses (code, name, credits, semester, prerequisite) VALUES (?, ?, ?, ?, ?)
 `);
+
+const semesterCourseTemplates = {
+  'Semester 1': [
+    ['SEM1-CS101', 'Introduction to Computer Science', 3],
+    ['SEM1-MATH101', 'Calculus I', 4],
+    ['SEM1-ENG101', 'Communication Skills', 3],
+    ['SEM1-PHY101', 'Physics I', 4],
+    ['SEM1-CHEM101', 'General Chemistry', 3],
+    ['SEM1-ICT101', 'Digital Literacy', 3]
+  ],
+  'Semester 2': [
+    ['SEM2-CS201', 'Data Structures and Algorithms', 3],
+    ['SEM2-MATH201', 'Discrete Mathematics', 3],
+    ['SEM2-ENG201', 'Academic Writing', 3],
+    ['SEM2-ECON201', 'Introduction to Economics', 3],
+    ['SEM2-ICT201', 'Information and Communication Technology', 3],
+    ['SEM2-BUS201', 'Fundamentals of Business', 3]
+  ],
+  'Semester 3': [
+    ['SEM3-CS301', 'Database Systems', 3],
+    ['SEM3-CS302', 'Computer Architecture', 3],
+    ['SEM3-MATH301', 'Statistics for Computing', 3],
+    ['SEM3-ELE201', 'Circuit Theory', 3],
+    ['SEM3-STAT301', 'Probability and Statistics', 3],
+    ['SEM3-LOG301', 'Logic Design', 3]
+  ],
+  'Semester 4': [
+    ['SEM4-CS401', 'Operating Systems', 3],
+    ['SEM4-CS402', 'Object-Oriented Programming', 3],
+    ['SEM4-MATH401', 'Linear Algebra', 3],
+    ['SEM4-NET401', 'Computer Networks', 3],
+    ['SEM4-WEB401', 'Web Technologies', 3],
+    ['SEM4-SYS401', 'Systems Programming', 3]
+  ],
+  'Semester 5': [
+    ['SEM5-CS501', 'Software Engineering', 3],
+    ['SEM5-CS502', 'Analysis of Algorithms', 3],
+    ['SEM5-CS503', 'Human-Computer Interaction', 3],
+    ['SEM5-DB501', 'Data Mining Fundamentals', 3],
+    ['SEM5-SEC501', 'Information Security Foundations', 3],
+    ['SEM5-ML501', 'Machine Learning Basics', 3]
+  ],
+  'Semester 6': [
+    ['SEM6-CS601', 'Artificial Intelligence', 3],
+    ['SEM6-CS602', 'Compiler Design', 3],
+    ['SEM6-CS603', 'Distributed Systems', 3],
+    ['SEM6-MGT601', 'Project Management', 3],
+    ['SEM6-SYS601', 'Systems Analysis', 3],
+    ['SEM6-DEV601', 'Mobile Application Development', 3]
+  ],
+  'Semester 7': [
+    ['SEM7-CS701', 'Advanced Database Systems', 3],
+    ['SEM7-CS702', 'Machine Learning', 3],
+    ['SEM7-CS703', 'Final Year Project I', 4],
+    ['SEM7-ETH701', 'Professional Ethics', 3],
+    ['SEM7-ML701', 'Research Methods', 3],
+    ['SEM7-CYB701', 'Cybersecurity Law', 3]
+  ],
+  'Semester 8': [
+    ['SEM8-CS801', 'Final Year Project II', 4],
+    ['SEM8-CS802', 'Cloud Computing', 3],
+    ['SEM8-CS803', 'Cybersecurity', 3],
+    ['SEM8-INT801', 'Industrial Attachment', 4],
+    ['SEM8-AI801', 'Emerging Technologies', 3],
+    ['SEM8-DEV801', 'Enterprise Systems', 3]
+  ]
+};
+
+function ensureSemesterCourses() {
+  Object.entries(semesterCourseTemplates).forEach(([semester, courses]) => {
+    const existing = db.prepare('SELECT COUNT(*) AS total FROM courses WHERE semester = ?').get(semester).total;
+    if (existing >= 5) return;
+
+    courses.forEach(([code, name, credits]) => {
+      insertCourse.run(code, name, credits, semester, '');
+    });
+  });
+}
+
+Object.entries(semesterCourseTemplates).forEach(([semester, courses]) => {
+  courses.forEach(([code, name, credits]) => {
+    insertCourse.run(code, name, credits, semester, '');
+  });
+});
+ensureSemesterCourses();
+
 const insertEnrollment = db.prepare(`
   INSERT OR IGNORE INTO enrollments (student_id, course_id, semester, status) VALUES (?, ?, ?, ?)
 `);
@@ -384,10 +482,45 @@ if (!existingAccountant) {
   insertAccountant.run(bobId, 'Finance', 'Manager');
 }
 
-insertCourse.run('CS101', 'Introduction to Computer Science', 3, 'Fall', '');
-insertCourse.run('CS201', 'Data Structures and Algorithms', 3, 'Fall', 'CS101');
-insertCourse.run('CS301', 'Database Systems', 3, 'Spring', 'CS101');
-insertCourse.run('MATH101', 'Calculus I', 4, 'Fall', '');
+insertCourse.run('CS101', 'Introduction to Computer Science', 3, 'Semester 1', '');
+insertCourse.run('MATH101', 'Calculus I', 4, 'Semester 1', '');
+insertCourse.run('ENG101', 'Communication Skills', 3, 'Semester 1', '');
+insertCourse.run('PHY101', 'Physics I', 4, 'Semester 1', '');
+
+insertCourse.run('CS201', 'Data Structures and Algorithms', 3, 'Semester 2', 'CS101');
+insertCourse.run('MATH201', 'Discrete Mathematics', 3, 'Semester 2', 'MATH101');
+insertCourse.run('ENG201', 'Academic Writing', 3, 'Semester 2', 'ENG101');
+insertCourse.run('ECON201', 'Introduction to Economics', 3, 'Semester 2', '');
+
+insertCourse.run('CS301', 'Database Systems', 3, 'Semester 3', 'CS101');
+insertCourse.run('CS302', 'Computer Architecture', 3, 'Semester 3', 'CS201');
+insertCourse.run('MATH301', 'Statistics for Computing', 3, 'Semester 3', 'MATH201');
+insertCourse.run('ELE201', 'Circuit Theory', 3, 'Semester 3', 'PHY101');
+
+insertCourse.run('CS401', 'Operating Systems', 3, 'Semester 4', 'CS302');
+insertCourse.run('CS402', 'Object-Oriented Programming', 3, 'Semester 4', 'CS201');
+insertCourse.run('MATH401', 'Linear Algebra', 3, 'Semester 4', 'MATH301');
+insertCourse.run('NET401', 'Computer Networks', 3, 'Semester 4', 'CS302');
+
+insertCourse.run('CS501', 'Software Engineering', 3, 'Semester 5', 'CS402');
+insertCourse.run('CS502', 'Analysis of Algorithms', 3, 'Semester 5', 'CS201');
+insertCourse.run('CS503', 'Human-Computer Interaction', 3, 'Semester 5', 'CS401');
+insertCourse.run('DB501', 'Data Mining Fundamentals', 3, 'Semester 5', 'CS301');
+
+insertCourse.run('CS601', 'Artificial Intelligence', 3, 'Semester 6', 'CS501');
+insertCourse.run('CS602', 'Compiler Design', 3, 'Semester 6', 'CS402');
+insertCourse.run('CS603', 'Distributed Systems', 3, 'Semester 6', 'NET401');
+insertCourse.run('MGT601', 'Project Management', 3, 'Semester 6', '');
+
+insertCourse.run('CS701', 'Advanced Database Systems', 3, 'Semester 7', 'CS301');
+insertCourse.run('CS702', 'Machine Learning', 3, 'Semester 7', 'CS601');
+insertCourse.run('CS703', 'Final Year Project I', 4, 'Semester 7', 'CS501');
+insertCourse.run('ETH701', 'Professional Ethics', 3, 'Semester 7', '');
+
+insertCourse.run('CS801', 'Final Year Project II', 4, 'Semester 8', 'CS703');
+insertCourse.run('CS802', 'Cloud Computing', 3, 'Semester 8', 'CS603');
+insertCourse.run('CS803', 'Cybersecurity', 3, 'Semester 8', 'NET401');
+insertCourse.run('INT801', 'Industrial Attachment', 4, 'Semester 8', 'CS703');
 
 const johnStudentId = db.prepare('SELECT id FROM students WHERE user_id = ?').get(johnId).id;
 const janeStudentId = db.prepare('SELECT id FROM students WHERE user_id = ?').get(janeId).id;

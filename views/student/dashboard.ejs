@@ -12,8 +12,10 @@
     <div class="nav-links">
       <a href="/student/dashboard">Overview</a>
       <a href="/student/courses">My Courses</a>
+      <a href="/student/registration">Registration</a>
+      <a href="/student/exam-registration">Exam Registration</a>
+      <a href="/student/program-outline">Program Outline</a>
       <a href="/student/announcements">Announcements</a>
-      <a href="/student/results">Results</a>
       <a href="/student/materials">Materials</a>
       <a href="/student/payments">Payments</a>
       <a href="/student/profile">Profile</a>
@@ -21,44 +23,17 @@
     </div>
   </nav>
   <div class="container">
-    <h1>Student Dashboard</h1>
+    <div class="page-header">
+      <h1>Student Dashboard</h1>
+    </div>
     <div class="stats-grid">
       <div class="stat-card">
         <span class="label">Announcements</span>
         <span class="value"><%= stats.announcements %></span>
       </div>
       <div class="stat-card">
-        <span class="label">Results</span>
-        <span class="value"><%= stats.results %></span>
-      </div>
-      <div class="stat-card">
         <span class="label">Materials</span>
         <span class="value"><%= stats.materials %></span>
-      </div>
-      <div class="stat-card">
-        <span class="label">Balance</span>
-        <span class="value">ZMW <%= Number(stats.balance).toLocaleString() %></span>
-      </div>
-    </div>
-
-    <div class="widget-row">
-      <div class="widget">
-        <h3>Academic status</h3>
-        <p><strong>Program:</strong> <%= student.program %></p>
-        <p><strong>Year:</strong> <%= student.year_of_study %></p>
-      </div>
-      <div class="widget">
-        <h3>Performance</h3>
-        <div class="chart-bars">
-          <% const gradeBands = [75, 82, 91, 68, 88, 97]; const gradeLabels = ['A+', 'A', 'B+', 'B', 'C+', 'C']; gradeBands.forEach((value, index) => { %>
-            <div class="bar" style="height: <%= value %>%"><span><%= gradeLabels[index] %></span></div>
-          <% }); %>
-        </div>
-      </div>
-      <div class="widget">
-        <h3>Financial overview</h3>
-        <p><strong>Outstanding Balance:</strong> ZMW <%= Number(student.tuition_balance).toLocaleString() %></p>
-        <p><strong>Payment Status:</strong> <%= payments.length ? payments[0].status : 'No payment record' %></p>
       </div>
     </div>
 
@@ -74,116 +49,27 @@
         <p><strong>Mode of Study:</strong> <%= student.study_mode || 'Full-time' %></p>
         <a href="/student/profile" class="button-link">Edit profile</a>
       </section>
-    <section class="card">
-      <h2>Course Registration</h2>
-      <form action="/student/register-course" method="POST">
-        <label>Course</label>
-        <select name="course_id">
-          <% courses.forEach(course => { %>
-            <option value="<%= course.id %>"><%= course.code %> - <%= course.name %></option>
-          <% }); %>
-        </select>
-        <label>Semester</label>
-        <select name="semester">
-          <option value="Semester 1">Semester 1</option>
-          <option value="Semester 2">Semester 2</option>
-          <option value="Semester 3">Semester 3</option>
-          <option value="Semester 4">Semester 4</option>
-          <option value="Semester 5">Semester 5</option>
-          <option value="Semester 6">Semester 6</option>
-          <option value="Semester 7">Semester 7</option>
-          <option value="Semester 8">Semester 8</option>
-        </select>
-        <button type="submit">Register</button>
-      </form>
-      <h2>My Courses</h2>
-      <table>
-        <thead><tr><th>Code</th><th>Name</th><th>Semester</th><th>Status</th><th>CA / 40</th><th>Final Exam Status</th><th>Grade</th><th>Action</th></tr></thead>
-        <tbody>
-          <% enrollments.forEach(enrollment => { %>
-            <tr>
-              <td><%= enrollment.code %></td>
-              <td><%= enrollment.name %></td>
-              <td><%= enrollment.semester || 'N/A' %></td>
-              <td><%= enrollment.status %></td>
-              <td><%= enrollment.ca_score %> / 40</td>
-              <td><%= enrollment.exam_status %></td>
-              <td><%= enrollment.grade || 'Pending' %></td>
-              <td>
-                <form action="/student/drop-course" method="POST" style="margin:0;">
-                  <input type="hidden" name="enrollment_id" value="<%= enrollment.id %>">
-                  <button type="submit">Drop</button>
-                </form>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    </section>
-    <section class="card">
-      <h2>Results</h2>
-      <table>
-        <thead><tr><th>Semester</th><th>Course</th><th>Grade</th></tr></thead>
-        <tbody>
-          <% results.forEach(result => { %>
-            <tr>
-              <td><%= result.semester %></td>
-              <td><%= result.code %> - <%= result.name %></td>
-              <td><%= result.grade %></td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    </section>
-    <section class="card">
-      <h2>Upload Tuition Receipt</h2>
-      <form action="/student/upload-tuition-receipt" method="POST" enctype="multipart/form-data">
-        <label>Receipt File</label>
-        <input type="file" name="receipt" accept=".pdf" required>
-        <p class="hint">Only PDF receipts are accepted for tuition verification.</p>
-        <button type="submit">Upload</button>
-      </form>
-      <p><strong>Receipt Status:</strong> <%= student.tuition_receipt_status %></p>
-      <% if (student.tuition_receipt_file) { %>
-        <p><a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View uploaded receipt</a></p>
-      <% } %>
-    </section>
-    <section class="card">
-      <h2>Payments & Announcements</h2>
-      <h3>Recent payments</h3>
-      <ul>
-        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — ZMW <%= payment.amount %> (<%= payment.status %>)</li><% }); %>
-      </ul>
-      <h3>Latest announcements</h3>
-      <ul>
-        <% announcements.forEach(item => { %><li><strong><%= item.title %>:</strong> <%= item.body %></li><% }); %>
-      </ul>
-      <p><a href="/student/announcements">View all announcements</a></p>
-    </section>
-    <section class="card">
-      <h2>Assignment Upload</h2>
-      <form action="/student/upload-assignment" method="POST" enctype="multipart/form-data">
-        <label>Assignment Title</label>
-        <input type="text" name="title" placeholder="Assignment 1">
-        <label>File</label>
-        <input type="file" name="assignment" accept=".pdf,.doc,.docx" required>
-        <p class="hint">Assignments are accepted in PDF, DOC, or DOCX format.</p>
-        <button type="submit">Submit Assignment</button>
-      </form>
-    </section>
-    <section class="card">
-      <h2>Uploaded Documents</h2>
-      <form action="/student/upload-document" method="POST" enctype="multipart/form-data">
-        <label>Title</label>
-        <input type="text" name="title">
-        <label>File</label>
-        <input type="file" name="doc">
-        <button type="submit">Upload</button>
-      </form>
-      <ul>
-        <% documents.forEach(doc => { %><li><%= doc.title %> — <a href="/uploads/<%= doc.file_name %>" target="_blank">Open</a></li><% }); %>
-      </ul>
-    </section>
+
+      <section class="card">
+        <h2>Academic status</h2>
+        <p><strong>Program:</strong> <%= student.program %></p>
+        <p><strong>Year of study:</strong> <%= student.year_of_study %></p>
+        <p><strong>Registration status:</strong> <%= student.portal_access === 'active' ? 'Active' : 'Pending review' %></p>
+      </section>
+
+      <section class="card">
+        <h2>Uploaded Documents</h2>
+        <form action="/student/upload-document" method="POST" enctype="multipart/form-data">
+          <label>Title</label>
+          <input type="text" name="title">
+          <label>File</label>
+          <input type="file" name="doc">
+          <button type="submit">Upload</button>
+        </form>
+        <ul>
+          <% documents.forEach(doc => { %><li><%= doc.title %> — <a href="/uploads/<%= doc.file_name %>" target="_blank">Open</a></li><% }); %>
+        </ul>
+      </section>
     </div>
   </div>
 </body>

@@ -25,7 +25,42 @@ router.get('/dashboard', authorize('accountant', 'admin'), (req, res) => {
     ORDER BY full_name
   `).all();
   const payments = db.prepare('SELECT * FROM payments ORDER BY id DESC LIMIT 10').all();
-  res.render('accountant/dashboard', { user: req.session.user, students, receipts, payments });
+  const totalReceipts = receipts.length;
+  const pendingApprovals = students.filter(student => student.tuition_receipt_status === 'pending' || student.balance_payment_status === 'pending').length;
+  const totalOutstanding = students.reduce((sum, student) => sum + Number(student.tuition_balance || 0), 0);
+
+  res.render('accountant/dashboard', {
+    user: req.session.user,
+    students,
+    receipts,
+    payments,
+    stats: {
+      totalReceipts,
+      pendingApprovals,
+      totalOutstanding
+    }
+  });
+});
+
+router.get('/announcements', authorize('accountant'), (req, res) => {
+  const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC').all();
+  res.render('accountant/announcements', { user: req.session.user, announcements });
+});
+
+router.post('/publish-announcement', authorize('accountant'), (req, res) => {
+  const title = (req.body.title || '').trim();
+  const body = (req.body.body || '').trim();
+  if (!title || !body) {
+    return res.redirect('/accountant/announcements');
+  }
+
+  db.prepare('INSERT INTO announcements (title, body, source) VALUES (?, ?, ?)').run(title, body, 'Accounts');
+  res.redirect('/accountant/announcements');
+});
+
+router.post('/delete-announcement', authorize('accountant'), (req, res) => {
+  db.prepare('DELETE FROM announcements WHERE id = ?').run(req.body.announcement_id);
+  res.redirect('/accountant/announcements');
 });
 
 router.post('/approve-payment', authorize('accountant'), (req, res) => {

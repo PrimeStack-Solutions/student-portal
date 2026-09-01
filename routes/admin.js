@@ -29,6 +29,11 @@ router.get('/dashboard', authorize('admin'), (req, res) => {
   });
 });
 
+router.get('/announcements', authorize('admin'), (req, res) => {
+  const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC').all();
+  res.render('admin/announcements', { user: req.session.user, announcements });
+});
+
 router.post('/update-student', authorize('admin'), (req, res) => {
   const { student_id, full_name, email, program, status } = req.body;
   const student = db.prepare('SELECT user_id FROM students WHERE id = ?').get(student_id);
@@ -78,16 +83,16 @@ router.post('/publish-announcement', authorize('admin'), (req, res) => {
   const title = (req.body.title || '').trim();
   const body = (req.body.body || '').trim();
   if (!title || !body) {
-    return res.redirect('/admin/dashboard');
+    return res.redirect('/admin/announcements');
   }
 
-  db.prepare('INSERT INTO announcements (title, body) VALUES (?, ?)').run(title, body);
-  res.redirect('/admin/dashboard');
+  db.prepare('INSERT INTO announcements (title, body, source) VALUES (?, ?, ?)').run(title, body, 'Administration');
+  res.redirect('/admin/announcements');
 });
 
 router.post('/delete-announcement', authorize('admin'), (req, res) => {
   db.prepare('DELETE FROM announcements WHERE id = ?').run(req.body.announcement_id);
-  res.redirect('/admin/dashboard');
+  res.redirect('/admin/announcements');
 });
 
 module.exports = router;

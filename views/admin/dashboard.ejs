@@ -14,9 +14,12 @@
       <a href="/logout">Logout</a>
     </div>
   </nav>
-  <div class="container dashboard-grid">
-    <section class="card">
+  <div class="container">
+    <div class="page-header">
       <h1>Administration Center</h1>
+    </div>
+    <div class="dashboard-grid">
+    <section class="card">
       <h2>Pending Applications</h2>
       <% applicants.forEach(applicant => { %>
         <div class="student-card">
@@ -99,15 +102,12 @@
         <button type="submit">Add Course</button>
       </form>
       <h2>Announcements</h2>
-      <form action="/admin/publish-announcement" method="POST">
-        <input type="text" name="title" placeholder="Title" required>
-        <textarea name="body" placeholder="Message" required></textarea>
-        <button type="submit">Publish</button>
-      </form>
+      <p>Administration messages are published from the admin office.</p>
       <ul>
         <% announcements.forEach(item => { %>
           <li>
             <strong><%= item.title %>:</strong> <%= item.body %>
+            <small> — <%= item.source || 'Administration' %></small>
             <form action="/admin/delete-announcement" method="POST" style="display:inline-block; margin-left:8px;">
               <input type="hidden" name="announcement_id" value="<%= item.id %>">
               <button type="submit">Delete</button>
@@ -115,7 +115,9 @@
           </li>
         <% }); %>
       </ul>
+      <p class="inline-links"><a href="/admin/announcements">Manage announcements</a></p>
     </section>
+    </div>
   </div>
 </body>
 </html>

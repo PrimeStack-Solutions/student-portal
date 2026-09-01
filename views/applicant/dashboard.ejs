@@ -9,11 +9,17 @@
 <body>
   <nav>
     <span>Welcome, <%= user.full_name %> (Applicant)</span>
-    <a href="/logout">Logout</a>
+    <div class="nav-links">
+      <a href="/applicant/dashboard">Dashboard</a>
+      <a href="/logout">Logout</a>
+    </div>
   </nav>
-  <div class="container dashboard-grid">
-    <section class="card">
+  <div class="container">
+    <div class="page-header">
       <h1>Application Center</h1>
+    </div>
+    <div class="dashboard-grid">
+    <section class="card">
       <p><strong>Status:</strong> <%= applicant.status %></p>
       <p><strong>Program:</strong> <%= applicant.program_choice %></p>
       <p><strong>Intake:</strong> <%= applicant.intake %></p>
@@ -116,6 +122,7 @@
         </ul>
       <% } %>
     </section>
+    </div>
   </div>
 </body>
 </html>

@@ -27,6 +27,21 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 fs.mkdirSync(path.join(__dirname, 'public', 'uploads'), { recursive: true });
+app.use('/uploads', (req, res, next) => {
+  const requestedPath = req.path || '/';
+  if (requestedPath === '/' || requestedPath === '') {
+    return next();
+  }
+
+  const safeName = decodeURIComponent(requestedPath).replace(/^\/+/, '');
+  const absolutePath = path.join(__dirname, 'public', 'uploads', safeName);
+
+  if (!fs.existsSync(absolutePath)) {
+    return res.status(404).send('Receipt not available.');
+  }
+
+  next();
+}, express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: 'student-portal-secret-key',

@@ -25,7 +25,7 @@
         <section class="card">
           <h2><%= item.title %></h2>
           <p><%= item.body %></p>
-          <small><%= new Date(item.created_at).toLocaleString() %></small>
+          <small><strong>From:</strong> <%= item.source || 'General' %> · <%= new Date(item.created_at).toLocaleString() %></small>
         </section>
       <% }); %>
     </div>

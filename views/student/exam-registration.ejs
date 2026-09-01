@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Registration</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/courses">My Courses</a>
+      <a href="/student/registration">Registration</a>
+      <a href="/student/exam-registration">Exam Registration</a>
+      <a href="/student/program-outline">Program Outline</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/student/profile">Profile</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Exam Registration</h1>
+    </div>
+
+    <section class="card">
+      <h2>Select Semester</h2>
+      <form method="GET" action="/student/courses" class="inline-form">
+        <div>
+          <label for="semester">Semester</label>
+          <select id="semester" name="semester">
+            <% semesters.forEach(semester => { %>
+              <option value="<%= semester %>" <%= selectedSemester === semester ? 'selected' : '' %>><%= semester %></option>
+            <% }); %>
+          </select>
+        </div>
+        <button type="submit">View Courses</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Final Exam Eligibility - <%= selectedSemester %></h2>
+      <div class="info-box">
+        <strong>Rule:</strong> Students are eligible for the final exam only when their continuous assessment (CA) score is at least 15 out of 40. Scores below 15 are disqualified and cannot register for the final exam.
+      </div>
+      <% if (!examCourses.length) { %>
+        <p class="empty-state">No registered courses are available for this semester.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Course</th>
+                <th>Credits</th>
+                <th>CA / 40</th>
+                <th>Eligibility</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% examCourses.forEach(course => { %>
+                <tr>
+                  <td><%= course.code %></td>
+                  <td><%= course.name %></td>
+                  <td><%= course.credits %></td>
+                  <td><%= course.ca_score ?? 0 %> / 40</td>
+                  <td>
+                    <% if (course.exam_status === 'Eligible') { %>
+                      <span class="status-pill eligible">Eligible</span>
+                    <% } else { %>
+                      <span class="status-pill disqualified">Disqualified</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (course.exam_status === 'Eligible') { %>
+                      <form action="/student/register-exam" method="POST" style="margin:0;">
+                        <input type="hidden" name="course_id" value="<%= course.course_id %>">
+                        <input type="hidden" name="semester" value="<%= selectedSemester %>">
+                        <button type="submit">Register for Exam</button>
+                      </form>
+                    <% } else { %>
+                      <button type="button" disabled>Not Eligible</button>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <h2>My Exam Registrations</h2>
+      <% if (!registeredExams.length) { %>
+        <p class="empty-state">No exam registrations yet.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Semester</th>
+                <th>Code</th>
+                <th>Course</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% registeredExams.forEach(reg => { %>
+                <tr>
+                  <td><%= reg.semester %></td>
+                  <td><%= reg.code %></td>
+                  <td><%= reg.name %></td>
+                  <td><%= reg.status %></td>
+                  <td>
+                    <form action="/student/cancel-exam-registration" method="POST" style="margin:0;">
+                      <input type="hidden" name="exam_id" value="<%= reg.id %>">
+                      <button type="submit">Cancel</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

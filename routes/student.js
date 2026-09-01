@@ -98,6 +98,135 @@ router.get('/dashboard', authorize('student'), (req, res) => {
   });
 });
 
+router.get('/registration', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const selectedSemester = req.query.semester || 'Semester 1';
+  const semesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
+
+  const enrollments = db.prepare(`
+    SELECT e.id, e.status, e.semester, c.code, c.name, c.credits,
+      g.grade,
+      COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) AS ca_score,
+      CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
+    FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    LEFT JOIN grades g ON g.student_id = e.student_id AND g.course_id = e.course_id AND g.semester = e.semester
+    LEFT JOIN (
+      SELECT student_id, course_id, semester,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 2 THEN score END) AS assignment_two,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 1 THEN score END) AS quiz_one,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 2 THEN score END) AS quiz_two,
+        MAX(CASE WHEN assessment_type = 'test' THEN score END) AS test_score
+      FROM continuous_assessments
+      GROUP BY student_id, course_id, semester
+    ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
+    WHERE e.student_id = ?
+    ORDER BY e.semester, c.code
+  `).all(student.id);
+
+  const courses = db.prepare('SELECT * FROM courses WHERE semester = ? ORDER BY code').all(selectedSemester);
+
+  res.render('student/registration', {
+    user: userRow,
+    student,
+    enrollments,
+    courses,
+    semesters,
+    selectedSemester,
+    error: null,
+    success: null
+  });
+});
+
+router.get('/program-outline', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const semesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
+
+  const coursesBySemester = semesters.map(semester => ({
+    semester,
+    courses: db.prepare('SELECT * FROM courses WHERE semester = ? ORDER BY code').all(semester)
+  }));
+
+  res.render('student/program-outline', {
+    user: userRow,
+    student,
+    coursesBySemester,
+    semesters
+  });
+});
+
+router.get('/exam-registration', authorize('student'), (req, res) => {
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+  const selectedSemester = req.query.semester || 'Semester 1';
+  const semesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
+
+  const examCourses = db.prepare(`
+    SELECT e.id, e.course_id, e.semester, c.code, c.name, c.credits,
+      COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) AS ca_score,
+      CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
+    FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    LEFT JOIN (
+      SELECT student_id, course_id, semester,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
+        MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 2 THEN score END) AS assignment_two,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 1 THEN score END) AS quiz_one,
+        MAX(CASE WHEN assessment_type = 'quiz' AND assessment_number = 2 THEN score END) AS quiz_two,
+        MAX(CASE WHEN assessment_type = 'test' THEN score END) AS test_score
+      FROM continuous_assessments
+      GROUP BY student_id, course_id, semester
+    ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
+    WHERE e.student_id = ? AND e.semester = ?
+    ORDER BY c.code
+  `).all(student.id, selectedSemester);
+
+  const registeredExams = db.prepare(`
+    SELECT er.id, er.semester, c.code, c.name, er.status
+    FROM exam_registrations er
+    JOIN courses c ON c.id = er.course_id
+    WHERE er.student_id = ?
+    ORDER BY er.semester, c.code
+  `).all(student.id);
+
+  res.render('student/exam-registration', {
+    user: userRow,
+    student,
+    examCourses,
+    registeredExams,
+    semesters,
+    selectedSemester
+  });
+});
+
+router.post('/register-exam', authorize('student'), (req, res) => {
+  const { course_id, semester } = req.body;
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+
+  if (!course_id || !semester) {
+    return res.redirect('/student/exam-registration');
+  }
+
+  db.prepare('INSERT OR IGNORE INTO exam_registrations (student_id, course_id, semester, status) VALUES (?, ?, ?, ?)')
+    .run(student.id, course_id, semester, 'registered');
+
+  res.redirect(`/student/exam-registration?semester=${encodeURIComponent(semester)}`);
+});
+
+router.post('/cancel-exam-registration', authorize('student'), (req, res) => {
+  const { exam_id } = req.body;
+  const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
+
+  if (exam_id) {
+    db.prepare('DELETE FROM exam_registrations WHERE id = ? AND student_id = ?').run(exam_id, student.id);
+  }
+
+  res.redirect('/student/exam-registration');
+});
+
 router.get('/announcements', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);

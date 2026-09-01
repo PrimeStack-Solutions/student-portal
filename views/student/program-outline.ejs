@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Program Outline</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/courses">My Courses</a>
+      <a href="/student/registration">Registration</a>
+      <a href="/student/exam-registration">Exam Registration</a>
+      <a href="/student/program-outline">Program Outline</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/student/profile">Profile</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Program Outline</h1>
+      <p><strong>Program:</strong> <%= student.program %></p>
+    </div>
+
+    <% coursesBySemester.forEach(({ semester, courses }) => { %>
+      <section class="card">
+        <h2><%= semester %></h2>
+        <% if (!courses.length) { %>
+          <p class="empty-state">No courses assigned for this semester.</p>
+        <% } else { %>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Course</th>
+                  <th>Credits</th>
+                  <th>Prerequisite</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% courses.forEach(course => { %>
+                  <tr>
+                    <td><%= course.code %></td>
+                    <td><%= course.name %></td>
+                    <td><%= course.credits %></td>
+                    <td><%= course.prerequisite || 'None' %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+    <% }); %>
+  </div>
+</body>
+</html>

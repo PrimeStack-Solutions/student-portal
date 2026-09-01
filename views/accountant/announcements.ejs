@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accounts Announcements</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Accountant)</span>
+    <div class="nav-links">
+      <a href="/accountant/dashboard">Dashboard</a>
+      <a href="/accountant/announcements">Announcements</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Accounts Announcements</h1>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="label">Published</span>
+        <span class="value"><%= announcements.length %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Source</span>
+        <span class="value">Accounts</span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="card">
+        <h2>Publish Finance Notice</h2>
+        <form action="/accountant/publish-announcement" method="POST">
+          <div class="form-grid">
+            <div class="field-group full-width">
+              <label for="title">Title</label>
+              <input id="title" type="text" name="title" placeholder="Finance notice title" required>
+            </div>
+            <div class="field-group full-width">
+              <label for="body">Message</label>
+              <textarea id="body" name="body" rows="5" placeholder="Write the announcement to students and staff" required></textarea>
+            </div>
+          </div>
+          <button type="submit" class="primary-btn">Publish</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Recent Accounts Messages</h2>
+      <% if (!announcements.length) { %>
+        <div class="empty-state">No finance announcements published yet.</div>
+      <% } else { %>
+        <div class="list-stack">
+          <% announcements.forEach(item => { %>
+            <div class="list-item announcement-item">
+              <div>
+                <strong><%= item.title %></strong>
+                <p><%= item.body %></p>
+                <small><strong>From:</strong> <%= item.source || 'Accounts' %></small>
+              </div>
+              <form action="/accountant/delete-announcement" method="POST" onsubmit="return confirm('Are you sure?');" style="margin: 0;">
+                <input type="hidden" name="announcement_id" value="<%= item.id %>">
+                <button type="submit" class="danger-btn">Delete</button>
+              </form>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

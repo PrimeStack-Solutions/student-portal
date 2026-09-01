@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Registration</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <span>Welcome, <%= user.full_name %> (Student)</span>
+    <div class="nav-links">
+      <a href="/student/dashboard">Overview</a>
+      <a href="/student/courses">My Courses</a>
+      <a href="/student/registration">Registration</a>
+      <a href="/student/exam-registration">Exam Registration</a>
+      <a href="/student/program-outline">Program Outline</a>
+      <a href="/student/announcements">Announcements</a>
+      <a href="/student/materials">Materials</a>
+      <a href="/student/profile">Profile</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Course Registration</h1>
+    </div>
+
+    <section class="card">
+      <h2>Select Semester</h2>
+      <form method="GET" action="/student/courses" class="inline-form">
+        <div>
+          <label for="semester">Semester</label>
+          <select id="semester" name="semester">
+            <% semesters.forEach(semester => { %>
+              <option value="<%= semester %>" <%= selectedSemester === semester ? 'selected' : '' %>><%= semester %></option>
+            <% }); %>
+          </select>
+        </div>
+        <button type="submit">View Courses</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Courses for <%= selectedSemester %></h2>
+      <% if (!courses.length) { %>
+        <p class="empty-state">No courses are available for this semester yet.</p>
+      <% } else { %>
+        <form action="/student/register-course" method="POST" class="form-grid">
+          <div>
+            <label>Course</label>
+            <select name="course_id" required>
+              <% courses.forEach(course => { %>
+                <option value="<%= course.id %>"><%= course.code %> - <%= course.name %></option>
+              <% }); %>
+            </select>
+          </div>
+
+          <input type="hidden" name="semester" value="<%= selectedSemester %>">
+          <div class="form-actions">
+            <button type="submit">Register</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Credits</th>
+                <th>Prerequisite</th>
+                <th>Semester</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% courses.forEach(course => { %>
+                <tr>
+                  <td><%= course.code %></td>
+                  <td><%= course.name %></td>
+                  <td><%= course.credits %></td>
+                  <td><%= course.prerequisite || 'None' %></td>
+                  <td><%= course.semester %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <h2>My Registered Courses</h2>
+      <% if (!enrollments.length) { %>
+        <p class="empty-state">No courses are registered yet.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Semester</th>
+                <th>Status</th>
+                <th>CA / 40</th>
+                <th>Final Exam Status</th>
+                <th>Grade</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% enrollments.forEach(enrollment => { %>
+                <tr>
+                  <td><%= enrollment.code %></td>
+                  <td><%= enrollment.name %></td>
+                  <td><%= enrollment.semester || 'N/A' %></td>
+                  <td><%= enrollment.status %></td>
+                  <td><%= enrollment.ca_score %> / 40</td>
+                  <td><%= enrollment.exam_status %></td>
+                  <td><%= enrollment.grade || 'Pending' %></td>
+                  <td>
+                    <form action="/student/drop-course" method="POST" style="margin:0;">
+                      <input type="hidden" name="enrollment_id" value="<%= enrollment.id %>">
+                      <button type="submit">Drop</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

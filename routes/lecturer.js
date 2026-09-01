@@ -12,7 +12,7 @@ const upload = multer({
   }),
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, ['.pdf'].includes(ext));
+    cb(null, ['.pdf', '.doc', '.docx'].includes(ext));
   }
 });
 
@@ -24,7 +24,6 @@ router.get('/dashboard', authorize('lecturer'), (req, res) => {
     LEFT JOIN users u ON u.id = m.uploaded_by
     ORDER BY m.id DESC
   `).all();
-  const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC LIMIT 5').all();
   const students = db.prepare(`
     SELECT s.id, s.student_number, u.full_name
     FROM students s
@@ -60,11 +59,19 @@ router.get('/dashboard', authorize('lecturer'), (req, res) => {
   res.render('lecturer/dashboard', {
     user,
     materials,
-    announcements,
     students,
     courses,
     assessments,
     excludedStudents
+  });
+});
+
+router.get('/announcements', authorize('lecturer'), (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC').all();
+  res.render('lecturer/announcements', {
+    user,
+    announcements
   });
 });
 
@@ -81,6 +88,25 @@ router.post('/upload-material', authorize('lecturer'), upload.single('material')
   db.prepare('INSERT INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(req.body.title || 'Lecture material', req.body.description || 'Course handout', req.file.filename, req.file.mimetype, req.session.user.id, req.session.user.full_name, req.body.category || 'General');
 
+  res.redirect('/lecturer/dashboard');
+});
+
+router.post('/delete-material', authorize('lecturer'), (req, res) => {
+  const { material_id } = req.body;
+
+  if (!material_id) {
+    return res.redirect('/lecturer/dashboard');
+  }
+
+  const material = db.prepare('SELECT file_name FROM materials WHERE id = ?').get(material_id);
+  if (material && material.file_name) {
+    const uploadPath = path.join(__dirname, '..', 'public', 'uploads', material.file_name);
+    if (require('fs').existsSync(uploadPath)) {
+      require('fs').unlinkSync(uploadPath);
+    }
+  }
+
+  db.prepare('DELETE FROM materials WHERE id = ?').run(material_id);
   res.redirect('/lecturer/dashboard');
 });
 
@@ -121,10 +147,5 @@ router.post('/mark-excluded', authorize('lecturer'), (req, res) => {
   res.redirect('/lecturer/dashboard');
 });
 
-router.post('/publish-announcement', authorize('lecturer'), (req, res) => {
-  const { title, body } = req.body;
-  db.prepare('INSERT INTO announcements (title, body) VALUES (?, ?)').run(title, body);
-  res.redirect('/lecturer/dashboard');
-});
 
 module.exports = router;

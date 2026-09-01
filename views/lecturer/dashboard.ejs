@@ -11,12 +11,15 @@
     <span>Welcome, <%= user.full_name %> (Lecturer)</span>
     <div class="nav-links">
       <a href="/lecturer/dashboard">Home</a>
+      <a href="/lecturer/announcements">Announcements</a>
       <a href="/logout">Logout</a>
     </div>
   </nav>
 
   <div class="container">
-    <h1>Lecturer Dashboard</h1>
+    <div class="page-header">
+      <h1>Lecturer Dashboard</h1>
+    </div>
 
     <div class="stats-grid">
       <div class="stat-card">
@@ -24,24 +27,26 @@
         <span class="value"><%= materials.length %></span>
       </div>
       <div class="stat-card">
-        <span class="label">Announcements</span>
-        <span class="value"><%= announcements.length %></span>
+        <span class="label">Students</span>
+        <span class="value"><%= students.length %></span>
       </div>
     </div>
 
     <div class="dashboard-grid">
       <section class="card">
-        <h2>Upload PDF Material</h2>
+        <h2>Upload Assignment, Quiz or Material</h2>
         <form action="/lecturer/upload-material" method="POST" enctype="multipart/form-data">
           <input type="text" name="title" placeholder="Material title" required>
           <textarea name="description" placeholder="Short description"></textarea>
           <select name="category">
+            <option value="Assignment">Assignment</option>
+            <option value="Quiz">Quiz</option>
             <option value="General">General</option>
             <option value="Core Course">Core Course</option>
             <option value="Program Guide">Program Guide</option>
             <option value="Academic Support">Academic Support</option>
           </select>
-          <input type="file" name="material" accept=".pdf" required>
+          <input type="file" name="material" accept=".pdf,.doc,.docx" required>
           <button type="submit">Upload</button>
         </form>
       </section>
@@ -157,6 +162,7 @@
             <th>Category</th>
             <th>Uploaded By</th>
             <th>Download</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -166,11 +172,18 @@
               <td><%= item.category %></td>
               <td><%= item.uploaded_by_name || 'Lecturer' %></td>
               <td><a href="/uploads/<%= item.file_name %>" target="_blank">Open</a></td>
+              <td>
+                <form action="/lecturer/delete-material" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure?');">
+                  <input type="hidden" name="material_id" value="<%= item.id %>">
+                  <button type="submit">Delete</button>
+                </form>
+              </td>
             </tr>
           <% }); %>
         </tbody>
       </table>
     </section>
+
   </div>
 </body>
 </html>

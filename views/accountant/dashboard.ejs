@@ -9,76 +9,121 @@
 <body>
   <nav>
     <span>Welcome, <%= user.full_name %> (Accountant)</span>
-    <a href="/logout">Logout</a>
+    <div class="nav-links">
+      <a href="/accountant/dashboard">Dashboard</a>
+      <a href="/accountant/announcements">Announcements</a>
+      <a href="/logout">Logout</a>
+    </div>
   </nav>
-  <div class="container dashboard-grid">
-    <section class="card">
+  <div class="container">
+    <div class="page-header">
       <h1>Finance Dashboard</h1>
-      <p>Manage invoices, reconcile accounts, and review payment trends.</p>
-      <table>
-        <thead><tr><th>Student</th><th>Email</th><th>Balance</th><th>Tuition Receipt</th><th>Balance Receipt</th><th>Action</th></tr></thead>
-        <tbody>
-          <% students.forEach(student => { %>
-            <tr>
-              <td><%= student.full_name %></td>
-              <td><%= student.email %></td>
-              <td>ZMW <%= student.tuition_balance %></td>
-              <td>
-                <% if (student.tuition_receipt_file) { %>
-                  <a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View</a>
-                <% } else { %>
-                  None
-                <% } %>
-              </td>
-              <td>
-                <% if (student.balance_payment_receipt_file) { %>
-                  <a href="/uploads/<%= student.balance_payment_receipt_file %>" target="_blank">View</a><br>
-                  <small>Ref: <%= student.balance_payment_reference %><br>Amt: ZMW <%= student.balance_payment_amount %><br>Status: <%= student.balance_payment_status %></small>
-                  <% if (student.balance_payment_status === 'pending') { %>
-                    <form action="/accountant/approve-balance-payment" method="POST" style="margin-top: 8px;">
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="label">Invoices</span>
+        <span class="value"><%= students.length %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Receipts</span>
+        <span class="value"><%= stats.totalReceipts %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Pending</span>
+        <span class="value"><%= stats.pendingApprovals %></span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Outstanding</span>
+        <span class="value">ZMW <%= Number(stats.totalOutstanding).toLocaleString() %></span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="card">
+        <p><strong>Manage invoices, reconcile accounts, and review payment trends.</strong></p>
+
+        <div style="margin-top: 18px;">
+          <h2>Invoice & Account Reconciliation</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Email</th>
+                <th>Balance</th>
+                <th>Tuition Receipt</th>
+                <th>Balance Receipt</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% students.forEach(student => { %>
+                <tr>
+                  <td><%= student.full_name %></td>
+                  <td><%= student.email %></td>
+                  <td>ZMW <%= student.tuition_balance %></td>
+                  <td>
+                    <% if (student.tuition_receipt_file) { %>
+                      <a href="/uploads/<%= student.tuition_receipt_file %>" target="_blank">View</a>
+                    <% } else { %>
+                      None
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (student.balance_payment_receipt_file) { %>
+                      <a href="/uploads/<%= student.balance_payment_receipt_file %>" target="_blank">View</a><br>
+                      <small>Ref: <%= student.balance_payment_reference %><br>Amt: ZMW <%= student.balance_payment_amount %><br>Status: <%= student.balance_payment_status %></small>
+                      <% if (student.balance_payment_status === 'pending') { %>
+                        <form action="/accountant/approve-balance-payment" method="POST" style="margin-top: 8px;">
+                          <input type="hidden" name="student_id" value="<%= student.id %>">
+                          <button type="submit">Approve Balance</button>
+                        </form>
+                        <form action="/accountant/reject-balance-payment" method="POST" style="margin-top: 8px;">
+                          <input type="hidden" name="student_id" value="<%= student.id %>">
+                          <input type="text" name="rejection_reason" placeholder="Rejection reason" required>
+                          <button type="submit">Reject Balance</button>
+                        </form>
+                      <% } %>
+                    <% } else { %>
+                      None
+                    <% } %>
+                  </td>
+                  <td>
+                    <form action="/accountant/approve-payment" method="POST" style="margin-bottom: 6px;">
                       <input type="hidden" name="student_id" value="<%= student.id %>">
-                      <button type="submit">Approve Balance</button>
+                      <button type="submit">Approve</button>
                     </form>
-                    <form action="/accountant/reject-balance-payment" method="POST" style="margin-top: 8px;">
+                    <form action="/accountant/revoke-payment" method="POST">
                       <input type="hidden" name="student_id" value="<%= student.id %>">
-                      <input type="text" name="rejection_reason" placeholder="Rejection reason" required>
-                      <button type="submit">Reject Balance</button>
+                      <input type="text" name="rejection_reason" placeholder="Reason for rejection" required>
+                      <button type="submit">Revoke</button>
                     </form>
-                  <% } %>
-                <% } else { %>
-                  None
-                <% } %>
-              </td>
-              <td>
-                <form action="/accountant/approve-payment" method="POST" style="margin-bottom: 6px;">
-                  <input type="hidden" name="student_id" value="<%= student.id %>">
-                  <button type="submit">Approve</button>
-                </form>
-                <form action="/accountant/revoke-payment" method="POST">
-                  <input type="hidden" name="student_id" value="<%= student.id %>">
-                  <input type="text" name="rejection_reason" placeholder="Reason for rejection" required>
-                  <button type="submit">Revoke</button>
-                </form>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    </section>
-    <section class="card">
-      <h2>Receipt Review</h2>
-      <ul>
-        <% receipts.forEach(receipt => { %>
-          <li><strong><%= receipt.full_name %></strong> (<%= receipt.type %>) — <%= receipt.status %> — <% if (receipt.file_name) { %><a href="/uploads/<%= receipt.file_name %>" target="_blank">View receipt</a><% } else { %>No receipt uploaded<% } %></li>
-        <% }); %>
-      </ul>
-    </section>
-    <section class="card">
-      <h2>Payment Summary</h2>
-      <ul>
-        <% payments.forEach(payment => { %><li><%= payment.payment_date %> — <%= payment.purpose %>: ZMW <%= payment.amount %> (<%= payment.status %>)</li><% }); %>
-      </ul>
-    </section>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 24px;">
+          <h2>Receipt Review</h2>
+          <ul>
+            <% receipts.forEach(receipt => { %>
+              <li><strong><%= receipt.full_name %></strong> (<%= receipt.type %>) — <%= receipt.status %> — <% if (receipt.file_name) { %><a href="/uploads/<%= receipt.file_name %>" target="_blank">View receipt</a><% } else { %>No receipt uploaded<% } %></li>
+            <% }); %>
+          </ul>
+        </div>
+
+        <div style="margin-top: 24px;">
+          <h2>Payment Trend Summary</h2>
+          <ul>
+            <% payments.forEach(payment => { %>
+              <li><%= payment.payment_date %> — <%= payment.purpose %>: ZMW <%= payment.amount %> (<%= payment.status %>)</li>
+            <% }); %>
+          </ul>
+        </div>
+      </section>
+    </div>
   </div>
 </body>
 </html>
