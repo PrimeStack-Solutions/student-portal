@@ -40,42 +40,11 @@ router.post('/login', (req, res) => {
 });
 
 router.get('/register', (req, res) => {
-  res.render('register', { error: null, success: null });
+  return res.redirect('/login');
 });
 
 router.post('/register', (req, res) => {
-  const { student_number, password, confirm_password, full_name, email } = req.body;
-  const normalizedStudentNumber = (student_number || '').trim();
-
-  if (!normalizedStudentNumber || !password || !full_name || !email) {
-    return res.render('register', { error: 'All fields are required', success: null });
-  }
-
-  if (password !== confirm_password) {
-    return res.render('register', { error: 'Passwords do not match', success: null });
-  }
-
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(normalizedStudentNumber);
-  if (existing) {
-    return res.render('register', { error: 'That student number is already registered', success: null });
-  }
-
-  const passwordHash = bcrypt.hashSync(password, 10);
-  const result = db.prepare('INSERT INTO users (username, password_hash, role, full_name, email) VALUES (?, ?, ?, ?, ?)')
-    .run(normalizedStudentNumber, passwordHash, 'applicant', full_name, email);
-
-  db.prepare('INSERT INTO applicants (user_id, program_choice, intake, student_number, status, application_fee_paid, notes) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(result.lastInsertRowid, 'Undecided', 'Fall 2026', normalizedStudentNumber, 'submitted', 0, 'New applicant account created');
-
-  req.session.user = {
-    id: result.lastInsertRowid,
-    username: normalizedStudentNumber,
-    role: 'applicant',
-    full_name,
-    email
-  };
-
-  res.redirect('/applicant/dashboard');
+  return res.redirect('/login');
 });
 
 router.get('/logout', (req, res) => {
