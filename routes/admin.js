@@ -17,7 +17,12 @@ router.get('/dashboard', authorize('admin'), (req, res) => {
     JOIN users u ON a.user_id = u.id
     ORDER BY a.id DESC
   `).all();
-  const courses = db.prepare('SELECT * FROM courses ORDER BY code').all();
+  const courses = db.prepare(`
+    SELECT MIN(id) AS id, code, name, credits, semester, prerequisite
+    FROM courses
+    GROUP BY code, name, credits, semester, prerequisite
+    ORDER BY code
+  `).all();
   const announcements = db.prepare('SELECT * FROM announcements ORDER BY id DESC LIMIT 5').all();
 
   res.render('admin/dashboard', {

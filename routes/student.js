@@ -46,7 +46,11 @@ router.get('/dashboard', authorize('student'), (req, res) => {
       CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
     JOIN courses c ON e.course_id = c.id
-    LEFT JOIN grades g ON g.student_id = ? AND g.course_id = c.id
+    LEFT JOIN (
+      SELECT student_id, course_id, semester, MAX(grade) AS grade
+      FROM grades
+      GROUP BY student_id, course_id, semester
+    ) g ON g.student_id = e.student_id AND g.course_id = e.course_id AND g.semester = e.semester
     LEFT JOIN (
       SELECT student_id, course_id, semester,
         MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
@@ -58,8 +62,9 @@ router.get('/dashboard', authorize('student'), (req, res) => {
       GROUP BY student_id, course_id, semester
     ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
     WHERE e.student_id = ?
+    GROUP BY e.id, e.status, c.code, c.name, c.credits, c.prerequisite, g.grade, g.semester, ca.assignment_one, ca.assignment_two, ca.quiz_one, ca.quiz_two, ca.test_score
     ORDER BY e.semester, c.code
-  `).all(student.id, student.id);
+  `).all(student.id);
 
   const courses = db.prepare('SELECT * FROM courses ORDER BY code').all();
   const payments = db.prepare('SELECT * FROM payments WHERE student_id = ? ORDER BY id DESC').all(student.id);
@@ -74,7 +79,15 @@ router.get('/dashboard', authorize('student'), (req, res) => {
     ORDER BY g.semester, c.code
   `).all(student.id);
   const totalAnnouncements = db.prepare('SELECT COUNT(*) AS total FROM announcements').get().total;
-  const totalResults = db.prepare('SELECT COUNT(*) AS total FROM grades WHERE student_id = ?').get(student.id).total;
+  const totalResults = db.prepare(`
+    SELECT COUNT(*) AS total
+    FROM grades g
+    WHERE g.student_id = ?
+      AND EXISTS (
+        SELECT 1 FROM exam_registrations er
+        WHERE er.student_id = g.student_id AND er.course_id = g.course_id AND er.semester = g.semester
+      )
+  `).get(student.id).total;
   const totalMaterials = db.prepare('SELECT COUNT(*) AS total FROM materials').get().total;
 
   res.render('student/dashboard', {
@@ -102,7 +115,7 @@ router.get('/registration', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   const selectedSemester = req.query.semester || 'Semester 1';
-  const semesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
+  const semesters = Array.from({ length: 14 }, (_, index) => `Semester ${index + 1}`);
 
   const enrollments = db.prepare(`
     SELECT e.id, e.status, e.semester, c.code, c.name, c.credits,
@@ -111,7 +124,11 @@ router.get('/registration', authorize('student'), (req, res) => {
       CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
     JOIN courses c ON c.id = e.course_id
-    LEFT JOIN grades g ON g.student_id = e.student_id AND g.course_id = e.course_id AND g.semester = e.semester
+    LEFT JOIN (
+      SELECT student_id, course_id, semester, MAX(grade) AS grade
+      FROM grades
+      GROUP BY student_id, course_id, semester
+    ) g ON g.student_id = e.student_id AND g.course_id = e.course_id AND g.semester = e.semester
     LEFT JOIN (
       SELECT student_id, course_id, semester,
         MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
@@ -123,6 +140,7 @@ router.get('/registration', authorize('student'), (req, res) => {
       GROUP BY student_id, course_id, semester
     ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
     WHERE e.student_id = ?
+    GROUP BY e.id, e.status, e.semester, c.code, c.name, c.credits, g.grade, ca.assignment_one, ca.assignment_two, ca.quiz_one, ca.quiz_two, ca.test_score
     ORDER BY e.semester, c.code
   `).all(student.id);
 
@@ -143,12 +161,20 @@ router.get('/registration', authorize('student'), (req, res) => {
 router.get('/program-outline', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
-  const semesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
+  const semesters = Array.from({ length: 14 }, (_, index) => `Semester ${index + 1}`);
 
-  const coursesBySemester = semesters.map(semester => ({
-    semester,
-    courses: db.prepare('SELECT * FROM courses WHERE semester = ? ORDER BY code').all(semester)
-  }));
+  const coursesBySemester = semesters.map(semester => {
+    const seen = new Set();
+    const courses = db.prepare('SELECT * FROM courses WHERE semester = ? ORDER BY code').all(semester)
+      .filter(course => {
+        const key = `${course.code}|${course.name}|${course.credits}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    return { semester, courses };
+  });
 
   res.render('student/program-outline', {
     user: userRow,
@@ -162,10 +188,10 @@ router.get('/exam-registration', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   const selectedSemester = req.query.semester || 'Semester 1';
-  const semesters = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
+  const semesters = Array.from({ length: 14 }, (_, index) => `Semester ${index + 1}`);
 
   const examCourses = db.prepare(`
-    SELECT e.id, e.course_id, e.semester, c.code, c.name, c.credits,
+    SELECT DISTINCT e.id, e.course_id, e.semester, c.code, c.name, c.credits,
       COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) AS ca_score,
       CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
@@ -237,19 +263,21 @@ router.get('/announcements', authorize('student'), (req, res) => {
 router.get('/courses', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
-  const selectedSemester = req.query.semester || 'all';
-  const semesters = db.prepare('SELECT DISTINCT semester FROM enrollments WHERE student_id = ? ORDER BY semester')
+  const semesterOrder = Array.from({ length: 14 }, (_, index) => `Semester ${index + 1}`);
+  const semesters = db.prepare('SELECT DISTINCT semester FROM enrollments WHERE student_id = ? AND semester IS NOT NULL ORDER BY semester')
     .all(student.id)
     .map(item => item.semester)
-    .filter(Boolean);
-  let query = `
-    SELECT e.id, e.status, e.semester, c.code, c.name, c.credits,
-      g.grade,
+    .filter(Boolean)
+    .sort((a, b) => semesterOrder.indexOf(a) - semesterOrder.indexOf(b));
+  const currentSemester = semesters[semesters.length - 1] || 'Semester 1';
+  const selectedSemester = req.query.semester || currentSemester;
+
+  const courses = db.prepare(`
+    SELECT MIN(e.id) AS id, e.status, e.semester, c.code, c.name, c.credits,
       COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) AS ca_score,
       CASE WHEN COALESCE(ca.assignment_one, 0) + COALESCE(ca.assignment_two, 0) + COALESCE(ca.quiz_one, 0) + COALESCE(ca.quiz_two, 0) + COALESCE(ca.test_score, 0) >= 15 THEN 'Eligible' ELSE 'Disqualified' END AS exam_status
     FROM enrollments e
     JOIN courses c ON c.id = e.course_id
-    LEFT JOIN grades g ON g.student_id = e.student_id AND g.course_id = e.course_id AND g.semester = e.semester
     LEFT JOIN (
       SELECT student_id, course_id, semester,
         MAX(CASE WHEN assessment_type = 'assignment' AND assessment_number = 1 THEN score END) AS assignment_one,
@@ -260,16 +288,11 @@ router.get('/courses', authorize('student'), (req, res) => {
       FROM continuous_assessments
       GROUP BY student_id, course_id, semester
     ) ca ON ca.student_id = e.student_id AND ca.course_id = e.course_id AND ca.semester = e.semester
-    WHERE e.student_id = ?
-  `;
-  const params = [student.id];
-  if (selectedSemester !== 'all') {
-    query += ' AND e.semester = ?';
-    params.push(selectedSemester);
-  }
-  query += ' ORDER BY e.semester, c.code';
+    WHERE e.student_id = ? AND e.semester = ?
+    GROUP BY e.status, e.semester, c.code, c.name, c.credits, ca.assignment_one, ca.assignment_two, ca.quiz_one, ca.quiz_two, ca.test_score
+    ORDER BY c.code
+  `).all(student.id, selectedSemester);
 
-  const courses = db.prepare(query).all(...params);
   res.render('student/courses', { user: userRow, student, courses, semesters, selectedSemester });
 });
 
@@ -279,10 +302,15 @@ router.get('/results', authorize('student'), (req, res) => {
   const selectedSemester = req.query.semester || 'all';
 
   let query = `
-    SELECT g.semester, c.code, c.name, g.grade, g.final_exam_score
+    SELECT MAX(g.id) AS id, g.semester, c.code, c.name,
+           MAX(g.grade) AS grade, MAX(g.final_exam_score) AS final_exam_score
     FROM grades g
     JOIN courses c ON c.id = g.course_id
     WHERE g.student_id = ?
+      AND EXISTS (
+        SELECT 1 FROM exam_registrations er
+        WHERE er.student_id = g.student_id AND er.course_id = g.course_id AND er.semester = g.semester
+      )
   `;
   const params = [student.id];
 
@@ -291,7 +319,7 @@ router.get('/results', authorize('student'), (req, res) => {
     params.push(selectedSemester);
   }
 
-  query += ' ORDER BY g.semester, c.code';
+  query += ' GROUP BY g.semester, c.code, c.name ORDER BY g.semester, c.code';
 
   const results = db.prepare(query).all(...params);
   const semesters = [...new Set(results.map(item => item.semester).filter(Boolean))].sort();
@@ -317,10 +345,11 @@ router.get('/materials', authorize('student'), (req, res) => {
   const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
   const materials = db.prepare(`
-    SELECT m.*, u.full_name AS uploaded_by_name
+    SELECT MIN(m.id) AS id, m.title, m.description, m.file_name, m.file_type, m.uploaded_by, m.category, MAX(m.created_at) AS created_at, u.full_name AS uploaded_by_name
     FROM materials m
     LEFT JOIN users u ON u.id = m.uploaded_by
-    ORDER BY m.id DESC
+    GROUP BY m.title, m.file_name, m.description, m.file_type, m.uploaded_by, m.category, u.full_name
+    ORDER BY MAX(m.id) DESC
   `).all();
 
   res.render('student/materials', {
@@ -377,12 +406,12 @@ router.post('/change-password', authorize('student'), (req, res) => {
     });
   }
 
-  if (!new_password || new_password.length < 6) {
+  if (typeof new_password !== 'string' || !new_password.trim()) {
     const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
     return res.render('student/profile', {
       user,
       student,
-      error: 'New password must be at least 6 characters long.',
+      error: 'New password cannot be empty.',
       success: null,
       avatarInitials: (user.full_name || 'S').split(' ').slice(0, 2).map(name => name.charAt(0)).join('').toUpperCase()
     });
@@ -474,8 +503,11 @@ router.post('/profile', authorize('student'), (req, res) => {
 router.post('/register-course', authorize('student'), (req, res) => {
   const { course_id, semester } = req.body;
   const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(req.session.user.id);
-  db.prepare('INSERT INTO enrollments (student_id, course_id, semester, status) VALUES (?, ?, ?, ?)')
-    .run(student.id, course_id, semester, 'approved');
+  const existing = db.prepare('SELECT id FROM enrollments WHERE student_id = ? AND course_id = ? AND semester = ?').get(student.id, course_id, semester);
+  if (!existing) {
+    db.prepare('INSERT OR IGNORE INTO enrollments (student_id, course_id, semester, status) VALUES (?, ?, ?, ?)')
+      .run(student.id, course_id, semester, 'approved');
+  }
   res.redirect('/student/dashboard');
 });
 

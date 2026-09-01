@@ -136,6 +136,12 @@ router.post('/mark-excluded', authorize('lecturer'), (req, res) => {
     return res.redirect('/lecturer/dashboard');
   }
 
+  const hasExamRegistration = db.prepare('SELECT 1 FROM exam_registrations WHERE student_id = ? AND course_id = ? AND semester = ? LIMIT 1')
+    .get(student_id, course_id, semester);
+  if (!hasExamRegistration) {
+    return res.redirect('/lecturer/dashboard');
+  }
+
   const existing = db.prepare('SELECT id FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
     .get(student_id, course_id, semester);
   if (existing) {

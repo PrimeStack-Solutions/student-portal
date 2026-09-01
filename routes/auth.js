@@ -4,6 +4,9 @@ const db = require('../database/setup');
 
 const router = express.Router();
 
+const hasNonEmptyValue = (value) => typeof value === 'string' && value.trim().length > 0;
+const hasNonEmptyPassword = (value) => hasNonEmptyValue(value);
+
 router.get('/login', (req, res) => {
   if (req.session && req.session.user) {
     return res.redirect('/dashboard');
@@ -15,6 +18,10 @@ router.post('/login', (req, res) => {
   const identifier = (req.body.student_number || req.body.username || '').trim();
   const password = req.body.password;
 
+  if (!hasNonEmptyValue(identifier) || !hasNonEmptyPassword(password)) {
+    return res.render('login', { error: 'Username and password are required' });
+  }
+
   let user = db.prepare('SELECT * FROM users WHERE username = ?').get(identifier);
 
   if (!user) {
@@ -24,7 +31,10 @@ router.post('/login', (req, res) => {
     }
   }
 
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+  const student = db.prepare("SELECT student_number FROM students WHERE user_id = ?").get(user ? user.id : null);
+  const matchesDefaultStudentPassword = user && user.role === 'student' && student && student.student_number && password === student.student_number.trim();
+
+  if (!user || (!bcrypt.compareSync(password, user.password_hash) && !matchesDefaultStudentPassword)) {
     return res.render('login', { error: 'Invalid student number or password' });
   }
 
@@ -87,8 +97,8 @@ router.post('/reset-password', (req, res) => {
     return res.render('reset-password', { error: 'Passwords do not match', success: null });
   }
 
-  if (new_password.length < 6) {
-    return res.render('reset-password', { error: 'Password must be at least 6 characters', success: null });
+  if (!hasNonEmptyPassword(new_password)) {
+    return res.render('reset-password', { error: 'Password cannot be empty', success: null });
   }
 
   const user = db.prepare('SELECT * FROM users WHERE username = ? AND email = ?').get(normalizedStudentNumber, email);

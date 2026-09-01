@@ -15,6 +15,11 @@ function calculateGrade(total) {
   return 'D';
 }
 
+function hasExamRegistration(studentId, courseId, semester) {
+  return !!db.prepare('SELECT 1 FROM exam_registrations WHERE student_id = ? AND course_id = ? AND semester = ? LIMIT 1')
+    .get(studentId, courseId, semester);
+}
+
 router.get('/dashboard', authorize('examination'), (req, res) => {
   const students = db.prepare(`
     SELECT s.id, s.student_number, u.full_name
@@ -58,10 +63,11 @@ router.post('/revoke-exclusion', authorize('examination'), (req, res) => {
 
 router.post('/upload-result', authorize('examination'), (req, res) => {
   const { student_id, course_id, final_exam_score, semester, special_case_e } = req.body;
+  if (!student_id || !course_id || !semester || !hasExamRegistration(student_id, course_id, semester)) {
+    return res.redirect('/examination/dashboard');
+  }
+
   if (special_case_e === 'on') {
-    if (!student_id || !course_id || !semester) {
-      return res.redirect('/examination/dashboard');
-    }
     const existingSpecialResult = db.prepare('SELECT id FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
       .get(student_id, course_id, semester);
     if (existingSpecialResult) {
@@ -73,8 +79,9 @@ router.post('/upload-result', authorize('examination'), (req, res) => {
     }
     return res.redirect('/examination/dashboard');
   }
+
   const examScore = Number(final_exam_score);
-  if (!student_id || !course_id || !semester || !Number.isFinite(examScore) || examScore < 0 || examScore > 60) {
+  if (!Number.isFinite(examScore) || examScore < 0 || examScore > 60) {
     return res.redirect('/examination/dashboard');
   }
 
@@ -84,11 +91,7 @@ router.post('/upload-result', authorize('examination'), (req, res) => {
     WHERE student_id = ? AND course_id = ? AND semester = ?
   `).get(student_id, course_id, semester);
   const caScore = Number(ca.score);
-  if (caScore < 15) {
-    return res.redirect('/examination/dashboard');
-  }
-
-  const grade = calculateGrade(caScore + examScore);
+  const grade = caScore < 15 ? 'D' : calculateGrade(caScore + examScore);
 
   const existing = db.prepare('SELECT id FROM grades WHERE student_id = ? AND course_id = ? AND semester = ?')
     .get(student_id, course_id, semester);

@@ -28,7 +28,6 @@
         <div>
           <label for="semester">View semester</label>
           <select id="semester" name="semester">
-            <option value="all" <%= selectedSemester === 'all' ? 'selected' : '' %>>All semesters</option>
             <% semesters.forEach(semester => { %>
               <option value="<%= semester %>" <%= selectedSemester === semester ? 'selected' : '' %>><%= semester %></option>
             <% }); %>
@@ -39,7 +38,7 @@
     </section>
 
     <section class="card">
-      <h2><%= selectedSemester === 'all' ? 'All Semesters' : selectedSemester %></h2>
+      <h2><%= selectedSemester %></h2>
       <% if (!courses.length) { %>
         <p>No courses are registered for this semester.</p>
       <% } else { %>
@@ -52,7 +51,6 @@
               <th>Status</th>
               <th>CA / 40</th>
               <th>Final Exam Status</th>
-              <th>Grade</th>
             </tr>
           </thead>
           <tbody>
@@ -64,7 +62,6 @@
                 <td><%= course.status %></td>
                 <td><%= course.ca_score %> / 40</td>
                 <td><%= course.exam_status %></td>
-                <td><%= course.grade || 'Pending' %></td>
               </tr>
             <% }); %>
           </tbody>

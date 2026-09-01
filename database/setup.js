@@ -22,6 +22,32 @@ if (fs.existsSync(dbPath)) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
+const semesterOrder = Array.from({ length: 14 }, (_, index) => `Semester ${index + 1}`);
+
+function normalizeSemester(value) {
+  if (value === null || value === undefined) return 'Semester 1';
+
+  const trimmed = String(value).trim();
+  if (!trimmed) return 'Semester 1';
+
+  const directMatch = trimmed.match(/^Semester\s+(\d{1,2})$/i);
+  if (directMatch) {
+    const semNumber = Number(directMatch[1]);
+    return semNumber >= 1 && semNumber <= 14 ? `Semester ${semNumber}` : 'Semester 1';
+  }
+
+  const fallMatch = trimmed.match(/^Fall(?:\s+\d{4})?$/i);
+  if (fallMatch) return 'Semester 1';
+
+  const numberMatch = trimmed.match(/^(\d{1,2})$/);
+  if (numberMatch) {
+    const semNumber = Number(numberMatch[1]);
+    return semNumber >= 1 && semNumber <= 14 ? `Semester ${semNumber}` : 'Semester 1';
+  }
+
+  return 'Semester 1';
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +107,7 @@ db.exec(`
     code TEXT NOT NULL,
     name TEXT NOT NULL,
     credits INTEGER DEFAULT 3,
-    semester TEXT DEFAULT 'Fall',
+    semester TEXT DEFAULT 'Semester 1',
     prerequisite TEXT DEFAULT ''
   );
 
@@ -89,7 +115,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     course_id INTEGER NOT NULL,
-    semester TEXT DEFAULT 'Fall',
+    semester TEXT DEFAULT 'Semester 1',
     status TEXT DEFAULT 'pending',
     FOREIGN KEY (student_id) REFERENCES students(id),
     FOREIGN KEY (course_id) REFERENCES courses(id)
@@ -99,7 +125,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     course_id INTEGER NOT NULL,
-    semester TEXT DEFAULT 'Fall',
+    semester TEXT DEFAULT 'Semester 1',
     status TEXT DEFAULT 'registered',
     FOREIGN KEY (student_id) REFERENCES students(id),
     FOREIGN KEY (course_id) REFERENCES courses(id)
@@ -111,7 +137,7 @@ db.exec(`
     course_id INTEGER NOT NULL,
     grade TEXT DEFAULT 'N/A',
     gpa REAL DEFAULT 0,
-    semester TEXT DEFAULT 'Fall',
+    semester TEXT DEFAULT 'Semester 1',
     FOREIGN KEY (student_id) REFERENCES students(id),
     FOREIGN KEY (course_id) REFERENCES courses(id)
   );
@@ -270,8 +296,18 @@ addColumnIfMissing('students', 'balance_payment_reference', "balance_payment_ref
 addColumnIfMissing('grades', 'final_exam_score', 'final_exam_score REAL');
 
 addColumnIfMissing('courses', 'credits', "credits INTEGER DEFAULT 3");
-addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Fall'");
+addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Semester 1'");
 addColumnIfMissing('courses', 'prerequisite', "prerequisite TEXT DEFAULT ''");
+
+['courses', 'enrollments', 'exam_registrations', 'grades', 'continuous_assessments'].forEach(tableName => {
+  const rows = db.prepare(`SELECT * FROM ${tableName} WHERE semester IS NOT NULL`).all();
+  rows.forEach(row => {
+    const normalized = normalizeSemester(row.semester);
+    if (row.semester !== normalized) {
+      db.prepare(`UPDATE ${tableName} SET semester = ? WHERE id = ?`).run(normalized, row.id);
+    }
+  });
+});
 
 const duplicateCourses = db.prepare(`
   SELECT code, MIN(id) AS keep_id, GROUP_CONCAT(id) AS duplicate_ids
@@ -309,8 +345,43 @@ if (duplicateEnrollments.length) {
     });
   })();
 }
+
+const duplicateGrades = db.prepare(`
+  SELECT student_id, course_id, semester, MIN(id) AS keep_id, GROUP_CONCAT(id) AS duplicate_ids
+  FROM grades
+  GROUP BY student_id, course_id, semester
+  HAVING COUNT(*) > 1
+`).all();
+if (duplicateGrades.length) {
+  db.transaction(() => {
+    duplicateGrades.forEach(grade => {
+      grade.duplicate_ids.split(',')
+        .filter(id => Number(id) !== grade.keep_id)
+        .forEach(id => db.prepare('DELETE FROM grades WHERE id = ?').run(id));
+    });
+  })();
+}
+
+const duplicateMaterials = db.prepare(`
+  SELECT title, file_name, MIN(id) AS keep_id, GROUP_CONCAT(id) AS duplicate_ids
+  FROM materials
+  GROUP BY title, file_name
+  HAVING COUNT(*) > 1
+`).all();
+if (duplicateMaterials.length) {
+  db.transaction(() => {
+    duplicateMaterials.forEach(material => {
+      material.duplicate_ids.split(',')
+        .filter(id => Number(id) !== material.keep_id)
+        .forEach(id => db.prepare('DELETE FROM materials WHERE id = ?').run(id));
+    });
+  })();
+}
+
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS enrollments_student_course_semester_unique ON enrollments(student_id, course_id, semester)');
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS exam_registrations_student_course_semester_unique ON exam_registrations(student_id, course_id, semester)');
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS grades_student_course_semester_unique ON grades(student_id, course_id, semester)');
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS materials_title_file_unique ON materials(title, file_name)');
 
 const insertUser = db.prepare(`
   INSERT INTO users (username, password_hash, role, full_name, email)
@@ -401,17 +472,89 @@ const semesterCourseTemplates = {
     ['SEM8-INT801', 'Industrial Attachment', 4],
     ['SEM8-AI801', 'Emerging Technologies', 3],
     ['SEM8-DEV801', 'Enterprise Systems', 3]
+  ],
+  'Semester 9': [
+    ['SEM9-RSD901', 'Research Design', 3],
+    ['SEM9-ADV901', 'Advanced Systems Integration', 3],
+    ['SEM9-ETH901', 'Technology Ethics', 3],
+    ['SEM9-INT901', 'Industry Practicum', 3],
+    ['SEM9-BIG901', 'Big Data Analytics', 3],
+    ['SEM9-SEC901', 'Applied Security', 3]
+  ],
+  'Semester 10': [
+    ['SEM10-IOT1001', 'Internet of Things', 3],
+    ['SEM10-CLOUD1002', 'Cloud Architecture', 3],
+    ['SEM10-VIS1003', 'Visualization & Analytics', 3],
+    ['SEM10-DS1004', 'Data Science', 3],
+    ['SEM10-APP1005', 'Advanced App Development', 3],
+    ['SEM10-SIM1006', 'Simulation Modeling', 3]
+  ],
+  'Semester 11': [
+    ['SEM11-FYP1101', 'Capstone Project I', 4],
+    ['SEM11-UX1102', 'UX Research', 3],
+    ['SEM11-ML1103', 'Advanced Machine Learning', 3],
+    ['SEM11-AG1104', 'Agent-Based Systems', 3],
+    ['SEM11-AI1105', 'AI Applications', 3],
+    ['SEM11-SEC1106', 'Security Operations', 3]
+  ],
+  'Semester 12': [
+    ['SEM12-FYP1201', 'Capstone Project II', 4],
+    ['SEM12-OPS1202', 'Operations Research', 3],
+    ['SEM12-DS1203', 'Advanced Data Science', 3],
+    ['SEM12-BUS1204', 'Innovation Management', 3],
+    ['SEM12-MOB1205', 'Mobile Systems Design', 3],
+    ['SEM12-NET1206', 'Next-Gen Networking', 3]
+  ],
+  'Semester 13': [
+    ['SEM13-MIS1301', 'Management Information Systems', 3],
+    ['SEM13-ENT1302', 'Entrepreneurship', 3],
+    ['SEM13-RES1303', 'Research Seminar', 3],
+    ['SEM13-INT1304', 'Internship II', 4],
+    ['SEM13-STR1305', 'Strategic IT Planning', 3],
+    ['SEM13-SYS1306', 'Systems Leadership', 3]
+  ],
+  'Semester 14': [
+    ['SEM14-PRJ1401', 'Final Professional Project', 6],
+    ['SEM14-IND1402', 'Industry Readiness', 3],
+    ['SEM14-ADV1403', 'Advanced Professional Practice', 3],
+    ['SEM14-ORG1404', 'Organizational IT', 3],
+    ['SEM14-COM1405', 'Communication for Professionals', 3],
+    ['SEM14-CASE1406', 'Case Study & Review', 3]
   ]
 };
 
 function ensureSemesterCourses() {
-  Object.entries(semesterCourseTemplates).forEach(([semester, courses]) => {
-    const existing = db.prepare('SELECT COUNT(*) AS total FROM courses WHERE semester = ?').get(semester).total;
-    if (existing >= courses.length) return;
+  const targetCount = 6;
 
-    courses.forEach(([code, name, credits]) => {
-      insertCourse.run(code, name, credits, semester, '');
-    });
+  Object.entries(semesterCourseTemplates).forEach(([semester, courses]) => {
+    const rows = db.prepare('SELECT id, code, name, credits FROM courses WHERE semester = ? ORDER BY id').all(semester);
+
+    if (rows.length > targetCount) {
+      const extraIds = rows.slice(targetCount).map(row => row.id);
+      if (extraIds.length) {
+        const placeholders = extraIds.map(() => '?').join(',');
+        db.prepare(`DELETE FROM courses WHERE id IN (${placeholders})`).run(...extraIds);
+      }
+    }
+
+    const remaining = db.prepare('SELECT COUNT(*) AS total FROM courses WHERE semester = ?').get(semester).total;
+    if (remaining < targetCount) {
+      courses.forEach(([code, name, credits]) => {
+        const exists = db.prepare('SELECT 1 FROM courses WHERE semester = ? AND code = ? LIMIT 1').get(semester, code);
+        if (!exists) {
+          insertCourse.run(code, name, credits, semester, '');
+        }
+      });
+    }
+
+    const finalRows = db.prepare('SELECT id, code, name FROM courses WHERE semester = ? ORDER BY id').all(semester);
+    if (finalRows.length > targetCount) {
+      const extras = finalRows.slice(targetCount).map(row => row.id);
+      if (extras.length) {
+        const placeholders = extras.map(() => '?').join(',');
+        db.prepare(`DELETE FROM courses WHERE id IN (${placeholders})`).run(...extras);
+      }
+    }
   });
 }
 
@@ -433,14 +576,20 @@ const insertMaterial = db.prepare(`
   INSERT OR IGNORE INTO materials (title, description, file_name, file_type, uploaded_by, uploaded_by_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)
 `);
 
-const passwordHash = bcrypt.hashSync('password123', 10);
+const defaultPasswordHash = bcrypt.hashSync('password123', 10);
 
 function ensureUser(username, role, fullName, email) {
   const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
   if (existing) {
     return existing.id;
   }
-  return insertUser.run(username, passwordHash, role, fullName, email).lastInsertRowid;
+  return insertUser.run(username, defaultPasswordHash, role, fullName, email).lastInsertRowid;
+}
+
+function setDefaultStudentPassword(userId, studentNumber) {
+  if (!studentNumber || !studentNumber.trim()) return;
+  const normalized = studentNumber.trim();
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(normalized, 10), userId);
 }
 
 const johnId = ensureUser('john_student', 'student', 'John Smith', 'john@university.edu');
@@ -461,11 +610,13 @@ const existingStudentJohn = db.prepare('SELECT id FROM students WHERE user_id = 
 if (!existingStudentJohn) {
   insertStudent.run(johnId, 'STU1001', 'STU-20260704-1001', 'Bachelor of Computer Engineering', 2, 'Full-time', '+1 555-0101', '12 Elm Street', 3.7, 250, 'active', 'blocked', '', 'pending');
 }
+setDefaultStudentPassword(johnId, 'STU-20260704-1001');
 
 const existingStudentJane = db.prepare('SELECT id FROM students WHERE user_id = ?').get(janeId);
 if (!existingStudentJane) {
   insertStudent.run(janeId, 'STU1002', 'STU-20260704-1002', 'Bachelor of Business Administration', 1, 'Part-time', '+1 555-0102', '14 Oak Avenue', 3.2, 0, 'active', 'granted', 'tuition-receipt.pdf', 'approved');
 }
+setDefaultStudentPassword(janeId, 'STU-20260704-1002');
 
 const existingAdmin = db.prepare('SELECT id FROM admins WHERE user_id = ?').get(aliceId);
 if (!existingAdmin) {
@@ -479,13 +630,13 @@ if (!existingAccountant) {
 
 const johnStudentId = db.prepare('SELECT id FROM students WHERE user_id = ?').get(johnId).id;
 const janeStudentId = db.prepare('SELECT id FROM students WHERE user_id = ?').get(janeId).id;
-insertEnrollment.run(johnStudentId, 1, 'Fall', 'approved');
-insertEnrollment.run(johnStudentId, 2, 'Fall', 'approved');
-insertEnrollment.run(johnStudentId, 4, 'Fall', 'approved');
-insertEnrollment.run(janeStudentId, 1, 'Fall', 'pending');
-insertGrade.run(johnStudentId, 1, 'A+', 4.0, 'Fall');
-insertGrade.run(johnStudentId, 2, 'B+', 3.3, 'Fall');
-insertGrade.run(johnStudentId, 4, 'D+', 2.0, 'Fall');
+insertEnrollment.run(johnStudentId, 1, 'Semester 1', 'approved');
+insertEnrollment.run(johnStudentId, 2, 'Semester 1', 'approved');
+insertEnrollment.run(johnStudentId, 4, 'Semester 1', 'approved');
+insertEnrollment.run(janeStudentId, 1, 'Semester 1', 'pending');
+insertGrade.run(johnStudentId, 1, 'A+', 4.0, 'Semester 1');
+insertGrade.run(johnStudentId, 2, 'B+', 3.3, 'Semester 1');
+insertGrade.run(johnStudentId, 4, 'D+', 2.0, 'Semester 1');
 insertPayment.run(johnStudentId, 1500, '2026-06-01', 'completed', 'Tuition');
 insertPayment.run(janeStudentId, 250, '2026-06-15', 'pending', 'Registration Fee');
 insertAnnouncement.run('Welcome to the New SIS Portal', 'Please review your application status and stay up to date with deadlines.');
