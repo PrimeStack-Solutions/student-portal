@@ -40,12 +40,15 @@ The local certificate is self-signed, so your browser may ask you to accept a se
 
 ## Demo Accounts
 
-| Username | Password | Role |
-|----------|----------|------|
-| john_student | password123 | Student |
-| jane_student | password123 | Student (John Phiri) |
-| bob_accountant | password123 | Accountant |
+Students log in with their student number as both the username and password by default.
+
+| Username / Student Number | Password | Role |
+|--------------------------|----------|------|
+| STU-20260704-1001 | STU-20260704-1001 | Student |
+| STU-20260704-1002 | STU-20260704-1002 | Student |
 | alice_admin | password123 | Admin |
+| bob_accountant | password123 | Accountant |
+| dr_owens | password123 | Lecturer |
 | exam_officer | password123 | Examination Department |
 
 ## License
