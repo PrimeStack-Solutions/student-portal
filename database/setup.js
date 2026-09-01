@@ -407,7 +407,7 @@ const semesterCourseTemplates = {
 function ensureSemesterCourses() {
   Object.entries(semesterCourseTemplates).forEach(([semester, courses]) => {
     const existing = db.prepare('SELECT COUNT(*) AS total FROM courses WHERE semester = ?').get(semester).total;
-    if (existing >= 5) return;
+    if (existing >= courses.length) return;
 
     courses.forEach(([code, name, credits]) => {
       insertCourse.run(code, name, credits, semester, '');
@@ -415,11 +415,6 @@ function ensureSemesterCourses() {
   });
 }
 
-Object.entries(semesterCourseTemplates).forEach(([semester, courses]) => {
-  courses.forEach(([code, name, credits]) => {
-    insertCourse.run(code, name, credits, semester, '');
-  });
-});
 ensureSemesterCourses();
 
 const insertEnrollment = db.prepare(`
@@ -481,46 +476,6 @@ const existingAccountant = db.prepare('SELECT id FROM accountants WHERE user_id 
 if (!existingAccountant) {
   insertAccountant.run(bobId, 'Finance', 'Manager');
 }
-
-insertCourse.run('CS101', 'Introduction to Computer Science', 3, 'Semester 1', '');
-insertCourse.run('MATH101', 'Calculus I', 4, 'Semester 1', '');
-insertCourse.run('ENG101', 'Communication Skills', 3, 'Semester 1', '');
-insertCourse.run('PHY101', 'Physics I', 4, 'Semester 1', '');
-
-insertCourse.run('CS201', 'Data Structures and Algorithms', 3, 'Semester 2', 'CS101');
-insertCourse.run('MATH201', 'Discrete Mathematics', 3, 'Semester 2', 'MATH101');
-insertCourse.run('ENG201', 'Academic Writing', 3, 'Semester 2', 'ENG101');
-insertCourse.run('ECON201', 'Introduction to Economics', 3, 'Semester 2', '');
-
-insertCourse.run('CS301', 'Database Systems', 3, 'Semester 3', 'CS101');
-insertCourse.run('CS302', 'Computer Architecture', 3, 'Semester 3', 'CS201');
-insertCourse.run('MATH301', 'Statistics for Computing', 3, 'Semester 3', 'MATH201');
-insertCourse.run('ELE201', 'Circuit Theory', 3, 'Semester 3', 'PHY101');
-
-insertCourse.run('CS401', 'Operating Systems', 3, 'Semester 4', 'CS302');
-insertCourse.run('CS402', 'Object-Oriented Programming', 3, 'Semester 4', 'CS201');
-insertCourse.run('MATH401', 'Linear Algebra', 3, 'Semester 4', 'MATH301');
-insertCourse.run('NET401', 'Computer Networks', 3, 'Semester 4', 'CS302');
-
-insertCourse.run('CS501', 'Software Engineering', 3, 'Semester 5', 'CS402');
-insertCourse.run('CS502', 'Analysis of Algorithms', 3, 'Semester 5', 'CS201');
-insertCourse.run('CS503', 'Human-Computer Interaction', 3, 'Semester 5', 'CS401');
-insertCourse.run('DB501', 'Data Mining Fundamentals', 3, 'Semester 5', 'CS301');
-
-insertCourse.run('CS601', 'Artificial Intelligence', 3, 'Semester 6', 'CS501');
-insertCourse.run('CS602', 'Compiler Design', 3, 'Semester 6', 'CS402');
-insertCourse.run('CS603', 'Distributed Systems', 3, 'Semester 6', 'NET401');
-insertCourse.run('MGT601', 'Project Management', 3, 'Semester 6', '');
-
-insertCourse.run('CS701', 'Advanced Database Systems', 3, 'Semester 7', 'CS301');
-insertCourse.run('CS702', 'Machine Learning', 3, 'Semester 7', 'CS601');
-insertCourse.run('CS703', 'Final Year Project I', 4, 'Semester 7', 'CS501');
-insertCourse.run('ETH701', 'Professional Ethics', 3, 'Semester 7', '');
-
-insertCourse.run('CS801', 'Final Year Project II', 4, 'Semester 8', 'CS703');
-insertCourse.run('CS802', 'Cloud Computing', 3, 'Semester 8', 'CS603');
-insertCourse.run('CS803', 'Cybersecurity', 3, 'Semester 8', 'NET401');
-insertCourse.run('INT801', 'Industrial Attachment', 4, 'Semester 8', 'CS703');
 
 const johnStudentId = db.prepare('SELECT id FROM students WHERE user_id = ?').get(johnId).id;
 const janeStudentId = db.prepare('SELECT id FROM students WHERE user_id = ?').get(janeId).id;

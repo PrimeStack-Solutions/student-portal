@@ -12,18 +12,20 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  let user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+  const identifier = (req.body.student_number || req.body.username || '').trim();
+  const password = req.body.password;
+
+  let user = db.prepare('SELECT * FROM users WHERE username = ?').get(identifier);
 
   if (!user) {
-    const student = db.prepare("SELECT u.* FROM students s JOIN users u ON u.id = s.user_id WHERE s.student_number IS NOT NULL AND TRIM(COALESCE(s.student_number, '')) != '' AND s.student_number = ?").get(username);
+    const student = db.prepare("SELECT u.* FROM students s JOIN users u ON u.id = s.user_id WHERE s.student_number IS NOT NULL AND TRIM(COALESCE(s.student_number, '')) != '' AND s.student_number = ?").get(identifier);
     if (student) {
       user = student;
     }
   }
 
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.render('login', { error: 'Invalid username or password' });
+    return res.render('login', { error: 'Invalid student number or password' });
   }
 
   req.session.user = {
@@ -42,9 +44,10 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', (req, res) => {
-  const { username, password, confirm_password, full_name, email } = req.body;
+  const { student_number, password, confirm_password, full_name, email } = req.body;
+  const normalizedStudentNumber = (student_number || '').trim();
 
-  if (!username || !password || !full_name || !email) {
+  if (!normalizedStudentNumber || !password || !full_name || !email) {
     return res.render('register', { error: 'All fields are required', success: null });
   }
 
@@ -52,21 +55,21 @@ router.post('/register', (req, res) => {
     return res.render('register', { error: 'Passwords do not match', success: null });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(normalizedStudentNumber);
   if (existing) {
-    return res.render('register', { error: 'That username is already taken', success: null });
+    return res.render('register', { error: 'That student number is already registered', success: null });
   }
 
   const passwordHash = bcrypt.hashSync(password, 10);
   const result = db.prepare('INSERT INTO users (username, password_hash, role, full_name, email) VALUES (?, ?, ?, ?, ?)')
-    .run(username, passwordHash, 'applicant', full_name, email);
+    .run(normalizedStudentNumber, passwordHash, 'applicant', full_name, email);
 
-  db.prepare('INSERT INTO applicants (user_id, program_choice, intake, status, application_fee_paid, notes) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(result.lastInsertRowid, 'Undecided', 'Fall 2026', 'submitted', 0, 'New applicant account created');
+  db.prepare('INSERT INTO applicants (user_id, program_choice, intake, student_number, status, application_fee_paid, notes) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(result.lastInsertRowid, 'Undecided', 'Fall 2026', normalizedStudentNumber, 'submitted', 0, 'New applicant account created');
 
   req.session.user = {
     id: result.lastInsertRowid,
-    username,
+    username: normalizedStudentNumber,
     role: 'applicant',
     full_name,
     email
@@ -108,7 +111,8 @@ router.get('/reset-password', (req, res) => {
 });
 
 router.post('/reset-password', (req, res) => {
-  const { username, email, new_password, confirm_password } = req.body;
+  const { student_number, email, new_password, confirm_password } = req.body;
+  const normalizedStudentNumber = (student_number || '').trim();
 
   if (new_password !== confirm_password) {
     return res.render('reset-password', { error: 'Passwords do not match', success: null });
@@ -118,10 +122,10 @@ router.post('/reset-password', (req, res) => {
     return res.render('reset-password', { error: 'Password must be at least 6 characters', success: null });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE username = ? AND email = ?').get(username, email);
+  const user = db.prepare('SELECT * FROM users WHERE username = ? AND email = ?').get(normalizedStudentNumber, email);
 
   if (!user) {
-    return res.render('reset-password', { error: 'No account found with that username and email', success: null });
+    return res.render('reset-password', { error: 'No account found with that student number and email', success: null });
   }
 
   const newHash = bcrypt.hashSync(new_password, 10);

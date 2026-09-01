@@ -12,8 +12,8 @@
     <p>Student and Staff Login</p>
     <% if (error) { %><p class="error"><%= error %></p><% } %>
     <form action="/login" method="POST">
-      <label for="username">Username or Student Number</label>
-      <input type="text" id="username" name="username" required>
+      <label for="student_number">Student Number</label>
+      <input type="text" id="student_number" name="student_number" required>
       <label for="password">Password</label>
       <div class="password-field">
         <input type="password" id="password" name="password" required>
@@ -24,8 +24,8 @@
     <div class="card" style="margin-top:16px;">
       <h2>Demo credentials</h2>
       <p><strong>Applicant:</strong> maya_applicant / password123</p>
-      <p><strong>Student:</strong> john_student / password123</p>
-      <p><strong>Student:</strong> jane_student / password123 (John Phiri)</p>
+      <p><strong>Student:</strong> STU-20260704-1001 / password123</p>
+      <p><strong>Student:</strong> STU-20260704-1002 / password123 (John Phiri)</p>
       <p><strong>Admin:</strong> alice_admin / password123</p>
       <p><strong>Accountant:</strong> bob_accountant / password123</p>
     </div>
