@@ -317,15 +317,29 @@ input, textarea, select, button {
   padding: 0;
   background: transparent;
   color: #0f4c81;
-  font-size: 18px;
   border: none;
   border-radius: 0 8px 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 .password-toggle:hover { background: #eaf4ff; }
-.eye-icon { display: inline-block; line-height: 1; }
+.password-toggle.is-visible .eye-icon path:last-child { opacity: 0.15; }
+.eye-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.eye-icon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.eye-icon path:last-child { opacity: 1; }
 textarea { min-height: 80px; resize: vertical; }
 button {
   background: #0f4c81;
