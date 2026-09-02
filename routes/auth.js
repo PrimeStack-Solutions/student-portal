@@ -3,9 +3,18 @@ const bcrypt = require('bcryptjs');
 const db = require('../database/setup');
 
 const router = express.Router();
+const passwordResetRequests = new Map();
 
 const hasNonEmptyValue = (value) => typeof value === 'string' && value.trim().length > 0;
 const hasNonEmptyPassword = (value) => hasNonEmptyValue(value);
+
+function generateResetCode() {
+  return String(Math.floor(10000 + Math.random() * 90000));
+}
+
+function clearResetCode(studentNumber, email) {
+  passwordResetRequests.delete(`${studentNumber.trim()}|${(email || '').trim().toLowerCase()}`);
+}
 
 router.get('/login', (req, res) => {
   if (req.session && req.session.user) {
@@ -86,31 +95,107 @@ router.get('/dashboard', (req, res) => {
 });
 
 router.get('/reset-password', (req, res) => {
-  res.render('reset-password', { error: null, success: null });
+  res.render('reset-password', { error: null, success: null, step: 'request', student_number: '', email: '' });
 });
 
 router.post('/reset-password', (req, res) => {
-  const { student_number, email, new_password, confirm_password } = req.body;
+  const { student_number, email, verification_code, new_password, confirm_password } = req.body;
   const normalizedStudentNumber = (student_number || '').trim();
+  const normalizedEmail = (email || '').trim().toLowerCase();
 
-  if (new_password !== confirm_password) {
-    return res.render('reset-password', { error: 'Passwords do not match', success: null });
-  }
-
-  if (!hasNonEmptyPassword(new_password)) {
-    return res.render('reset-password', { error: 'Password cannot be empty', success: null });
-  }
-
-  const user = db.prepare('SELECT * FROM users WHERE username = ? AND email = ?').get(normalizedStudentNumber, email);
-
+  const user = db.prepare('SELECT * FROM users WHERE username = ? AND email = ?').get(normalizedStudentNumber, normalizedEmail);
   if (!user) {
-    return res.render('reset-password', { error: 'No account found with that student number and email', success: null });
+    return res.render('reset-password', {
+      error: 'No account found with that student number and email',
+      success: null,
+      step: 'request',
+      student_number: normalizedStudentNumber,
+      email: normalizedEmail
+    });
   }
 
-  const newHash = bcrypt.hashSync(new_password, 10);
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, user.id);
+  const requestKey = `${normalizedStudentNumber}|${normalizedEmail}`;
+  const activeRequest = passwordResetRequests.get(requestKey);
 
-  res.render('reset-password', { error: null, success: 'Password reset successfully! You can now login.' });
+  if (verification_code) {
+    if (!activeRequest) {
+      return res.render('reset-password', {
+        error: 'Your reset code has expired or is invalid. Please request a new one.',
+        success: null,
+        step: 'request',
+        student_number: normalizedStudentNumber,
+        email: normalizedEmail
+      });
+    }
+
+    if (Date.now() > activeRequest.expiresAt) {
+      passwordResetRequests.delete(requestKey);
+      return res.render('reset-password', {
+        error: 'Your reset code has expired. Please request a new one.',
+        success: null,
+        step: 'request',
+        student_number: normalizedStudentNumber,
+        email: normalizedEmail
+      });
+    }
+
+    if (String(verification_code).trim() !== String(activeRequest.code)) {
+      return res.render('reset-password', {
+        error: 'The verification code is incorrect.',
+        success: null,
+        step: 'verify',
+        student_number: normalizedStudentNumber,
+        email: normalizedEmail
+      });
+    }
+
+    if (new_password !== confirm_password) {
+      return res.render('reset-password', {
+        error: 'Passwords do not match',
+        success: null,
+        step: 'verify',
+        student_number: normalizedStudentNumber,
+        email: normalizedEmail
+      });
+    }
+
+    if (!hasNonEmptyPassword(new_password)) {
+      return res.render('reset-password', {
+        error: 'Password cannot be empty',
+        success: null,
+        step: 'verify',
+        student_number: normalizedStudentNumber,
+        email: normalizedEmail
+      });
+    }
+
+    const newHash = bcrypt.hashSync(new_password, 10);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, user.id);
+    passwordResetRequests.delete(requestKey);
+
+    return res.render('reset-password', {
+      error: null,
+      success: 'Password reset successfully! You can now login with your new password.',
+      step: 'complete',
+      student_number: normalizedStudentNumber,
+      email: normalizedEmail
+    });
+  }
+
+  const resetCode = generateResetCode();
+  passwordResetRequests.set(requestKey, {
+    code: resetCode,
+    expiresAt: Date.now() + 10 * 60 * 1000
+  });
+
+  return res.render('reset-password', {
+    error: null,
+    success: `A 5-digit verification code was sent to ${normalizedEmail}. Enter it below to reset your password.`,
+    step: 'verify',
+    student_number: normalizedStudentNumber,
+    email: normalizedEmail,
+    demoCode: resetCode
+  });
 });
 
 module.exports = router;

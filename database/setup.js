@@ -294,7 +294,7 @@ addColumnIfMissing('students', 'balance_payment_status', "balance_payment_status
 addColumnIfMissing('students', 'balance_payment_amount', "balance_payment_amount REAL DEFAULT 0");
 addColumnIfMissing('students', 'balance_payment_reference', "balance_payment_reference TEXT DEFAULT ''");
 addColumnIfMissing('grades', 'final_exam_score', 'final_exam_score REAL');
-addColumnIfMissing('grades', 'created_at', "created_at TEXT DEFAULT CURRENT_TIMESTAMP");
+addColumnIfMissing('grades', 'created_at', 'created_at TEXT');
 
 addColumnIfMissing('courses', 'credits', "credits INTEGER DEFAULT 3");
 addColumnIfMissing('courses', 'semester', "semester TEXT DEFAULT 'Semester 1'");
